@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Canvas Test</title>
+</head>
+<body>
+    <h2>Canvas Test Results:</h2>
+    <canvas id="testCanvas" width="400" height="300" style="border: 1px solid red;"></canvas>
+    <div id="results" style="font-family: monospace; padding: 20px; background: #f0f0f0; margin: 20px 0;"></div>
+    
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message, isError = false) {
+            console.log(message);
+            resultsDiv.innerHTML += `<div style="color: ${isError ? 'red' : 'green'}">${message}</div>`;
+        }
+        
+        log('DOM loaded, testing canvas...');
+        
+        // Get canvas element
+        const canvas = document.getElementById('testCanvas');
+        log(`Canvas element: ${canvas}`);
+        log(`Canvas type: ${typeof canvas}`);
+        log(`Canvas constructor: ${canvas?.constructor?.name}`);
+        log(`Canvas tagName: ${canvas?.tagName}`);
+        log(`Canvas instanceof HTMLCanvasElement: ${canvas instanceof HTMLCanvasElement}`);
+        
+        // Check if canvas has getContext method
+        log(`getContext method type: ${typeof canvas?.getContext}`);
+        
+        if (canvas && typeof canvas.getContext === 'function') {
+            try {
+                const ctx = canvas.getContext('2d');
+                log(`2D context obtained: ${ctx}`);
+                
+                if (ctx) {
+                    // Test drawing
+                    ctx.fillStyle = 'green';
+                    ctx.fillRect(10, 10, 50, 50);
+                    ctx.fillStyle = 'blue';
+                    ctx.fillRect(60, 60, 30, 30);
+                    log('✅ Canvas test successful! Should see green and blue squares above.');
+                } else {
+                    log('❌ Failed to get 2D context', true);
+                }
+            } catch (error) {
+                log(`❌ getContext error: ${error.message}`, true);
+            }
+        } else {
+            log('❌ Canvas or getContext not available', true);
+        }
+        
+        // Additional browser info
+        log(`User Agent: ${navigator.userAgent}`);
+        log(`Document ready state: ${document.readyState}`);
+    </script>
+</body>
+</html>

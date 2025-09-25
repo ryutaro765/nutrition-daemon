@@ -1,0 +1,108 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(45deg, #1a2e1a, #213e16);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Courier New', monospace;
+    color: white;
+}
+
+.game-container {
+    position: relative;
+    border: 3px solid #00ff00;
+    border-radius: 10px;
+    box-shadow: 0 0 20px #00ff00;
+    background: #000;
+}
+
+canvas {
+    display: block;
+    background: linear-gradient(180deg, #87CEEB, #228B22);
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #00ff00;
+    font-size: 18px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.controls {
+    position: absolute;
+    bottom: -100px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.game-over {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #ff6b6b;
+    font-size: 24px;
+    display: none;
+}
+
+.boss-warning {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #ff0000;
+    font-size: 36px;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+    display: none;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.music-control {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #00ff00;
+    font-size: 14px;
+    cursor: pointer;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.stage-info {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #ffff00;
+    font-size: 28px;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+    display: none;
+}
+
+.title {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ffff00;
+    font-size: 24px;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+    font-weight: bold;
+}
