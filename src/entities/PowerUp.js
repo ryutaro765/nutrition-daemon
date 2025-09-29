@@ -30,30 +30,35 @@ export class PowerUp {
      */
     initializeType() {
         switch (this.type) {
-            case 'health':
-                this.baseColor = '#FF6B6B';
-                this.accentColor = '#FFFFFF';
-                this.description = 'HP回復 +20';
-                break;
-            case 'power':
-                this.baseColor = '#FFD700';
+            case 'carbohydrate':
+                this.baseColor = '#FFD700'; // ゴールド
                 this.accentColor = '#FFF8DC';
-                this.description = 'スコア +100';
+                this.description = 'エネルギー補給 +30HP';
+                this.spriteKey = 'carbohydrate_ball';
                 break;
-            case 'weapon':
-                this.baseColor = '#4169E1';
-                this.accentColor = '#87CEEB';
-                this.description = '武器レベルアップ';
+            case 'protein':
+                this.baseColor = '#FF6B6B'; // 赤
+                this.accentColor = '#FFFFFF';
+                this.description = '筋力強化 武器レベルアップ';
+                this.spriteKey = 'protein_ball';
                 break;
-            case 'laser_ammo':
-                this.baseColor = '#00FFFF';
+            case 'fat':
+                this.baseColor = '#FF8C00'; // オレンジ
+                this.accentColor = '#FFF8DC';
+                this.description = '持久力向上 スピードモード';
+                this.spriteKey = 'fat_ball';
+                break;
+            case 'vitamin':
+                this.baseColor = '#32CD32'; // ライムグリーン
+                this.accentColor = '#98FB98';
+                this.description = '免疫力アップ +40HP';
+                this.spriteKey = 'vitamin_ball';
+                break;
+            case 'mineral':
+                this.baseColor = '#4169E1'; // ブルー
                 this.accentColor = '#87CEEB';
                 this.description = 'レーザー弾薬 +8';
-                break;
-            case 'speed_mode':
-                this.baseColor = '#FF1493';
-                this.accentColor = '#FFB6C1';
-                this.description = '高速モード 5秒';
+                this.spriteKey = 'mineral_ball';
                 break;
             default:
                 this.baseColor = '#808080';
@@ -123,17 +128,11 @@ export class PowerUp {
     draw(renderer) {
         // パルスエフェクト計算
         const pulseScale = 1 + Math.sin(this.pulseTimer) * 0.1;
-        const finalScale = 2.5 * pulseScale; // 基本スケール2.5倍
+        const finalScale = 0.75 * pulseScale; // 64x64を48x48にスケール（0.75倍）
         
-        // スプライトキーを決定
-        let spriteKey = 'health_ball';
-        switch (this.type) {
-            case 'health': spriteKey = 'health_ball'; break;
-            case 'power': spriteKey = 'power_ball'; break;
-            case 'weapon': spriteKey = 'weapon_ball'; break;
-            case 'laser_ammo': spriteKey = 'laser_ball'; break;
-            case 'speed_mode': spriteKey = 'speed_ball'; break;
-        }
+        // 栄養素ボールスプライトキーを使用
+        const spriteKey = this.spriteKey || 'carbohydrate_ball';
+        console.log(`PowerUp type: ${this.type}, spriteKey: ${spriteKey}`);
         
         // 回転とスケールを適用して描画
         renderer.ctx.save();
@@ -145,17 +144,18 @@ export class PowerUp {
         renderer.ctx.rotate(this.angle);
         
         // スプライト描画（中心基準）
-        const spriteSize = 16 * finalScale;
+        const spriteSize = 64 * finalScale; // 64x64画像用
+        console.log(`🎨 Drawing sprite: ${spriteKey} for type: ${this.type}`);
         renderer.drawSprite(spriteKey, -spriteSize / 2, -spriteSize / 2, finalScale);
         
-        // アルファベット表示
+        // 栄養素アルファベット表示
         let letter = '';
         switch (this.type) {
-            case 'health': letter = 'H'; break;
-            case 'power': letter = 'P'; break;
-            case 'weapon': letter = 'W'; break;
-            case 'laser_ammo': letter = 'L'; break;
-            case 'speed_mode': letter = 'S'; break;
+            case 'carbohydrate': letter = 'C'; break;
+            case 'protein': letter = 'P'; break;
+            case 'fat': letter = 'F'; break;
+            case 'vitamin': letter = 'V'; break;
+            case 'mineral': letter = 'M'; break;
         }
         
         if (letter) {
@@ -461,19 +461,9 @@ export class PowerUpFactory {
      * @returns {string} パワーアップタイプ
      */
     static getRandomPowerUpType() {
-        const random = Math.random();
-        
-        if (random < 0.25) {
-            return 'health'; // 25%
-        } else if (random < 0.45) {
-            return 'power'; // 20%
-        } else if (random < 0.70) {
-            return 'weapon'; // 25% - 武器アップグレードを追加
-        } else if (random < 0.90) {
-            return 'laser_ammo'; // 20%
-        } else {
-            return 'speed_mode'; // 10%
-        }
+        const nutritionTypes = ['carbohydrate', 'protein', 'fat', 'vitamin', 'mineral'];
+        const randomIndex = Math.floor(Math.random() * nutritionTypes.length);
+        return nutritionTypes[randomIndex]; // 各20%の確率
     }
 
     /**

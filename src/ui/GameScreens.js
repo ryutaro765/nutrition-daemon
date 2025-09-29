@@ -98,6 +98,31 @@ export class GameScreens {
                 ],
                 typewriterSpeed: 3,
                 isComplete: false
+            },
+            ending: {
+                phase: 'entrance', // entrance, dialogue, celebration
+                timer: 0,
+                popolonX: -100,
+                popolonY: 450,
+                aphroditeX: 600,
+                aphroditeY: 350,
+                targetPopolonX: 450,
+                dialogueIndex: 0,
+                characterIndex: 0,
+                typewriterSpeed: 4, // Doubled speed for faster typing
+                dialogues: [
+                    { speaker: 'ポポロン', text: 'アフロディーテ！三人の魔王を倒したぞ！' },
+                    { speaker: 'アフロディーテ', text: '我が勇敢なるポポロン...よく来てくれました！' },
+                    { speaker: 'ポポロン', text: '愛する君を救うためなら、何物も俺を止められない' },
+                    { speaker: 'アフロディーテ', text: '一緒にこの大地に平和を取り戻しましょう！' },
+                    { speaker: 'ナレーター', text: 'かくして勇者ポポロンは姫君アフロディーテを救い出した...' },
+                    { speaker: 'ナレーター', text: '魔城は崩れ去り、光が再び大地に戻った' },
+                    { speaker: 'ナレーター', text: '二人の愛は全ての悪を打ち破り、永遠の幸せを手に入れた' },
+                    { speaker: 'ナレーター', text: 'ありがとう ポポロン！' }
+                ],
+                sparkles: [],
+                hearts: [],
+                completed: false
             }
         };
         
@@ -217,6 +242,17 @@ export class GameScreens {
                 this.screenStates.story.characterIndex = 0;
                 this.screenStates.story.isComplete = false;
                 break;
+            case 'ending':
+                this.screenStates.ending.phase = 'entrance';
+                this.screenStates.ending.timer = 0;
+                this.screenStates.ending.popolonX = -100;
+                this.screenStates.ending.popolonY = 450;
+                this.screenStates.ending.dialogueIndex = 0;
+                this.screenStates.ending.characterIndex = 0;
+                this.screenStates.ending.sparkles = [];
+                this.screenStates.ending.hearts = [];
+                this.screenStates.ending.completed = false;
+                break;
         }
     }
 
@@ -252,6 +288,9 @@ export class GameScreens {
                 break;
             case 'story':
                 result = this.updateStoryScreen(input);
+                break;
+            case 'ending':
+                result = this.updateEndingScreen(input);
                 break;
         }
         
@@ -567,6 +606,181 @@ export class GameScreens {
     }
 
     /**
+     * エンディング画面更新
+     * @param {Object} input - 入力状態
+     */
+    updateEndingScreen(input) {
+        const state = this.screenStates.ending;
+        state.timer++;
+
+        switch (state.phase) {
+            case 'entrance':
+                // Popolon walks towards Aphrodite - faster entrance
+                if (state.popolonX < state.targetPopolonX) {
+                    state.popolonX += 6; // Doubled speed from 3 to 6
+                } else {
+                    state.phase = 'dialogue';
+                    state.timer = 0;
+                }
+                break;
+
+            case 'dialogue':
+                // Handle dialogue typewriter effect
+                if (state.dialogueIndex < state.dialogues.length) {
+                    const currentDialogue = state.dialogues[state.dialogueIndex];
+                    if (state.characterIndex < currentDialogue.text.length) {
+                        state.characterIndex += state.typewriterSpeed / 60;
+                        if (state.characterIndex >= currentDialogue.text.length) {
+                            state.characterIndex = currentDialogue.text.length;
+                        }
+                    }
+
+                    // Auto-advance dialogue after a delay - much faster pacing
+                    if (state.characterIndex >= currentDialogue.text.length && state.timer > 90) { // 1.5 seconds instead of 3
+                        state.dialogueIndex++;
+                        state.characterIndex = 0;
+                        state.timer = 0;
+                    }
+                } else {
+                    state.phase = 'celebration';
+                    state.timer = 0;
+                    // Generate celebratory effects
+                    this.generateCelebrationEffects(state);
+                }
+                break;
+
+            case 'celebration':
+                // Update celebration effects
+                this.updateCelebrationEffects(state);
+                
+                // Mark as completed after celebration - shorter celebration
+                if (state.timer > 300) { // 5 seconds instead of 10
+                    state.completed = true;
+                }
+                break;
+        }
+
+        // Skip functionality
+        if (input.wasJustPressed('shoot') || input.wasJustPressed('enter') || input.wasJustPressed('space')) {
+            if (state.completed || state.phase === 'celebration') {
+                return 'title'; // Return to title after ending
+            } else {
+                // Skip to next dialogue or phase
+                if (state.phase === 'dialogue' && state.dialogueIndex < state.dialogues.length) {
+                    state.characterIndex = state.dialogues[state.dialogueIndex].text.length;
+                    state.timer = 90; // Trigger auto-advance - faster
+                } else if (state.phase === 'entrance') {
+                    state.popolonX = state.targetPopolonX;
+                    state.phase = 'dialogue';
+                    state.timer = 0;
+                }
+            }
+        }
+
+        // ESC to skip to title
+        if (input.wasJustPressed('escape')) {
+            return 'title';
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate celebration effects (hearts, sparkles)
+     */
+    generateCelebrationEffects(state) {
+        // Generate more sparkles for enhanced celebration
+        for (let i = 0; i < 80; i++) { // Increased from 50 to 80
+            state.sparkles.push({
+                x: Math.random() * GAME_CONFIG.CANVAS_WIDTH,
+                y: Math.random() * GAME_CONFIG.CANVAS_HEIGHT,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                life: 120 + Math.random() * 60,
+                maxLife: 120 + Math.random() * 60,
+                size: Math.random() * 4 + 2 // Slightly larger sparkles
+            });
+        }
+
+        // Generate more hearts for enhanced effect
+        for (let i = 0; i < 40; i++) { // Doubled from 20 to 40
+            state.hearts.push({
+                x: Math.random() * GAME_CONFIG.CANVAS_WIDTH,
+                y: GAME_CONFIG.CANVAS_HEIGHT + Math.random() * 100,
+                vx: (Math.random() - 0.5) * 2,
+                vy: -Math.random() * 3 - 1,
+                life: 180 + Math.random() * 120,
+                maxLife: 180 + Math.random() * 120,
+                size: Math.random() * 25 + 18, // Slightly larger hearts
+                rotation: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    /**
+     * Update celebration effects
+     */
+    updateCelebrationEffects(state) {
+        // Update sparkles
+        for (let i = state.sparkles.length - 1; i >= 0; i--) {
+            const sparkle = state.sparkles[i];
+            sparkle.x += sparkle.vx;
+            sparkle.y += sparkle.vy;
+            sparkle.life--;
+            
+            if (sparkle.life <= 0 || sparkle.x < 0 || sparkle.x > GAME_CONFIG.CANVAS_WIDTH || 
+                sparkle.y < 0 || sparkle.y > GAME_CONFIG.CANVAS_HEIGHT) {
+                state.sparkles.splice(i, 1);
+            }
+        }
+
+        // Update hearts
+        for (let i = state.hearts.length - 1; i >= 0; i--) {
+            const heart = state.hearts[i];
+            heart.x += heart.vx;
+            heart.y += heart.vy;
+            heart.rotation += 0.02;
+            heart.life--;
+            
+            if (heart.life <= 0 || heart.y < -50) {
+                state.hearts.splice(i, 1);
+            }
+        }
+
+        // Continuously generate new effects during celebration
+        if (state.timer % 30 === 0) { // Every 0.5 seconds
+            // Add more sparkles continuously
+            for (let i = 0; i < 15; i++) { // Increased from 10 to 15
+                state.sparkles.push({
+                    x: Math.random() * GAME_CONFIG.CANVAS_WIDTH,
+                    y: Math.random() * GAME_CONFIG.CANVAS_HEIGHT,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    life: 120,
+                    maxLife: 120,
+                    size: Math.random() * 4 + 2 // Slightly larger sparkles
+                });
+            }
+        }
+
+        if (state.timer % 30 === 0) { // Every 0.5 seconds instead of every second
+            // Add more hearts continuously
+            for (let i = 0; i < 6; i++) { // Doubled from 3 to 6
+                state.hearts.push({
+                    x: Math.random() * GAME_CONFIG.CANVAS_WIDTH,
+                    y: GAME_CONFIG.CANVAS_HEIGHT + 20,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: -Math.random() * 3 - 1,
+                    life: 180,
+                    maxLife: 180,
+                    size: Math.random() * 25 + 18, // Slightly larger hearts
+                    rotation: Math.random() * Math.PI * 2
+                });
+            }
+        }
+    }
+
+    /**
      * 画面描画
      * @param {Object} renderer - レンダラー
      */
@@ -597,6 +811,9 @@ export class GameScreens {
                 break;
             case 'story':
                 this.drawStoryScreen(renderer);
+                break;
+            case 'ending':
+                this.drawEndingScreen(renderer);
                 break;
         }
         
@@ -916,6 +1133,251 @@ export class GameScreens {
             renderer.ctx.fillText('Press SPACE to Continue', centerX, GAME_CONFIG.CANVAS_HEIGHT - 50);
         }
         
+        renderer.ctx.textAlign = 'start';
+    }
+
+    /**
+     * エンディング画面描画
+     * @param {Object} renderer - レンダラー
+     */
+    drawEndingScreen(renderer) {
+        const state = this.screenStates.ending;
+        
+        // Beautiful gradient background (sunset/romance theme)
+        const gradient = renderer.ctx.createLinearGradient(0, 0, 0, GAME_CONFIG.CANVAS_HEIGHT);
+        gradient.addColorStop(0, '#FF6B6B'); // Warm pink sky
+        gradient.addColorStop(0.5, '#FFE66D'); // Golden horizon
+        gradient.addColorStop(1, '#4ECDC4'); // Soft teal ground
+        
+        renderer.ctx.fillStyle = gradient;
+        renderer.ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
+
+        // Add some clouds for atmosphere
+        this.drawClouds(renderer);
+
+        // Draw celebration effects first (background layer)
+        this.drawCelebrationEffects(renderer, state);
+
+        // Draw Popolon sprite
+        if (renderer.drawSprite) {
+            renderer.drawSprite('popolon', state.popolonX, state.popolonY, 3);
+        } else {
+            // Fallback rectangle
+            renderer.ctx.fillStyle = '#4169E1';
+            renderer.ctx.fillRect(state.popolonX, state.popolonY, 48, 48);
+        }
+
+        // Draw Aphrodite sprite
+        if (renderer.drawSprite) {
+            renderer.drawSprite('aphrodite', state.aphroditeX, state.aphroditeY, 3);
+        } else {
+            // Fallback rectangle
+            renderer.ctx.fillStyle = '#FF69B4';
+            renderer.ctx.fillRect(state.aphroditeX, state.aphroditeY, 48, 48);
+        }
+
+        // Draw dialogue box if in dialogue phase
+        if (state.phase === 'dialogue' && state.dialogueIndex < state.dialogues.length) {
+            this.drawDialogueBox(renderer, state);
+        }
+
+        // Draw completion message in celebration phase
+        if (state.phase === 'celebration') {
+            this.drawCelebrationMessage(renderer, state);
+        }
+
+        // Draw controls hint
+        this.drawEndingControls(renderer, state);
+    }
+
+    /**
+     * Draw clouds for atmosphere
+     */
+    drawClouds(renderer) {
+        const cloudPositions = [
+            { x: 100, y: 80, size: 60 },
+            { x: 300, y: 120, size: 80 },
+            { x: 500, y: 60, size: 70 },
+            { x: 650, y: 100, size: 50 }
+        ];
+
+        renderer.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        for (const cloud of cloudPositions) {
+            // Simple cloud shape using circles
+            renderer.ctx.beginPath();
+            renderer.ctx.arc(cloud.x, cloud.y, cloud.size * 0.6, 0, Math.PI * 2);
+            renderer.ctx.arc(cloud.x + cloud.size * 0.4, cloud.y, cloud.size * 0.8, 0, Math.PI * 2);
+            renderer.ctx.arc(cloud.x + cloud.size * 0.8, cloud.y, cloud.size * 0.5, 0, Math.PI * 2);
+            renderer.ctx.arc(cloud.x - cloud.size * 0.2, cloud.y, cloud.size * 0.7, 0, Math.PI * 2);
+            renderer.ctx.fill();
+        }
+    }
+
+    /**
+     * Draw celebration effects (sparkles and hearts)
+     */
+    drawCelebrationEffects(renderer, state) {
+        // Draw sparkles
+        for (const sparkle of state.sparkles) {
+            const alpha = sparkle.life / sparkle.maxLife;
+            renderer.ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
+            renderer.ctx.fillRect(sparkle.x - sparkle.size/2, sparkle.y - sparkle.size/2, sparkle.size, sparkle.size);
+            
+            // Add a glow effect
+            renderer.ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.5})`;
+            renderer.ctx.fillRect(sparkle.x - sparkle.size/4, sparkle.y - sparkle.size/4, sparkle.size/2, sparkle.size/2);
+        }
+
+        // Draw hearts with enhanced effects
+        for (const heart of state.hearts) {
+            const alpha = heart.life / heart.maxLife;
+            const pulseFactor = Math.sin(Date.now() * 0.01 + heart.x * 0.01) * 0.2 + 1; // Pulsing effect
+            
+            renderer.ctx.save();
+            renderer.ctx.translate(heart.x, heart.y);
+            renderer.ctx.rotate(heart.rotation);
+            renderer.ctx.scale(pulseFactor, pulseFactor);
+            
+            // Draw glow effect
+            renderer.ctx.shadowColor = '#FF69B4';
+            renderer.ctx.shadowBlur = 15;
+            renderer.ctx.fillStyle = `rgba(255, 105, 180, ${alpha})`;
+            
+            // Draw heart shape
+            const size = heart.size;
+            renderer.ctx.beginPath();
+            renderer.ctx.moveTo(0, size * 0.3);
+            renderer.ctx.bezierCurveTo(-size * 0.5, -size * 0.2, -size * 0.5, size * 0.2, 0, size * 0.8);
+            renderer.ctx.bezierCurveTo(size * 0.5, size * 0.2, size * 0.5, -size * 0.2, 0, size * 0.3);
+            renderer.ctx.fill();
+            
+            // Add inner white highlight
+            renderer.ctx.shadowBlur = 0;
+            renderer.ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
+            renderer.ctx.scale(0.6, 0.6);
+            renderer.ctx.beginPath();
+            renderer.ctx.moveTo(0, size * 0.3);
+            renderer.ctx.bezierCurveTo(-size * 0.5, -size * 0.2, -size * 0.5, size * 0.2, 0, size * 0.8);
+            renderer.ctx.bezierCurveTo(size * 0.5, size * 0.2, size * 0.5, -size * 0.2, 0, size * 0.3);
+            renderer.ctx.fill();
+            
+            renderer.ctx.restore();
+        }
+    }
+
+    /**
+     * Draw dialogue box
+     */
+    drawDialogueBox(renderer, state) {
+        const currentDialogue = state.dialogues[state.dialogueIndex];
+        const boxHeight = 120;
+        const boxY = GAME_CONFIG.CANVAS_HEIGHT - boxHeight - 20;
+        const margin = 40;
+
+        // Dialogue box background
+        renderer.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        renderer.ctx.fillRect(margin, boxY, GAME_CONFIG.CANVAS_WIDTH - margin * 2, boxHeight);
+        
+        // Border
+        renderer.ctx.strokeStyle = '#FFD700';
+        renderer.ctx.lineWidth = 3;
+        renderer.ctx.strokeRect(margin, boxY, GAME_CONFIG.CANVAS_WIDTH - margin * 2, boxHeight);
+
+        // Speaker name
+        renderer.ctx.font = 'bold 20px "Courier New", monospace';
+        renderer.ctx.fillStyle = '#FFD700';
+        renderer.ctx.textAlign = 'left';
+        renderer.ctx.fillText(currentDialogue.speaker + ':', margin + 20, boxY + 30);
+
+        // Dialogue text with typewriter effect
+        const displayText = currentDialogue.text.substring(0, Math.floor(state.characterIndex));
+        renderer.ctx.font = '18px "Courier New", monospace';
+        renderer.ctx.fillStyle = '#FFFFFF';
+        
+        // Word wrap
+        const words = displayText.split(' ');
+        const maxWidth = GAME_CONFIG.CANVAS_WIDTH - margin * 2 - 40;
+        let line = '';
+        let y = boxY + 60;
+        
+        for (const word of words) {
+            const testLine = line + word + ' ';
+            const metrics = renderer.ctx.measureText(testLine);
+            
+            if (metrics.width > maxWidth && line !== '') {
+                renderer.ctx.fillText(line, margin + 20, y);
+                line = word + ' ';
+                y += 25;
+            } else {
+                line = testLine;
+            }
+        }
+        renderer.ctx.fillText(line, margin + 20, y);
+
+        renderer.ctx.textAlign = 'start';
+    }
+
+    /**
+     * Draw celebration message
+     */
+    drawCelebrationMessage(renderer, state) {
+        const centerX = GAME_CONFIG.CANVAS_WIDTH / 2;
+        const centerY = 80;
+
+        // "THE END" with rainbow effect
+        const time = Date.now() * 0.001;
+        renderer.ctx.font = 'bold 48px "Courier New", monospace';
+        renderer.ctx.textAlign = 'center';
+        
+        const text = "THE END";
+        for (let i = 0; i < text.length; i++) {
+            const hue = (time * 100 + i * 60) % 360;
+            renderer.ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+            const charWidth = renderer.ctx.measureText(text[i]).width;
+            const x = centerX - (text.length * charWidth) / 2 + i * charWidth;
+            renderer.ctx.fillText(text[i], x, centerY);
+        }
+
+        // "THANK YOU POPOLON!" message with heart symbols
+        renderer.ctx.font = 'bold 32px "Courier New", monospace';
+        renderer.ctx.fillStyle = '#FF69B4'; // Pink color
+        const pulseFactor = Math.sin(time * 4) * 0.1 + 1; // Pulsing effect
+        renderer.ctx.save();
+        renderer.ctx.scale(pulseFactor, pulseFactor);
+        renderer.ctx.fillText('♥ THANK YOU POPOLON! ♥', centerX / pulseFactor, (centerY + 70) / pulseFactor);
+        renderer.ctx.restore();
+        
+        // Subtitle
+        renderer.ctx.font = 'bold 24px "Courier New", monospace';
+        renderer.ctx.fillStyle = '#FFD700';
+        renderer.ctx.fillText('おめでとうございます！', centerX, centerY + 120); // Japanese congratulations
+        
+        renderer.ctx.font = '18px "Courier New", monospace';
+        renderer.ctx.fillStyle = '#FFFFFF';
+        renderer.ctx.fillText('姫君アフロディーテを救い出しました！', centerX, centerY + 150); // Japanese text
+
+        renderer.ctx.textAlign = 'start';
+    }
+
+    /**
+     * Draw ending controls
+     */
+    drawEndingControls(renderer, state) {
+        const centerX = GAME_CONFIG.CANVAS_WIDTH / 2;
+        const y = GAME_CONFIG.CANVAS_HEIGHT - 30;
+
+        renderer.ctx.font = '16px "Courier New", monospace';
+        renderer.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        renderer.ctx.textAlign = 'center';
+
+        if (state.completed || state.phase === 'celebration') {
+            const blinkAlpha = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
+            renderer.ctx.fillStyle = `rgba(255, 255, 0, ${blinkAlpha})`;
+            renderer.ctx.fillText('Press SPACE to return to title', centerX, y);
+        } else {
+            renderer.ctx.fillText('Press SPACE to skip • ESC for title', centerX, y);
+        }
+
         renderer.ctx.textAlign = 'start';
     }
 

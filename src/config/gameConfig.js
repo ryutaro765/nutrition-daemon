@@ -136,27 +136,25 @@ export const BOSS_CONFIG = {
         },
         {
             name: 'ミネラルデーモン',
-            width: 225,
-            height: 225,
+            width: 180,
+            height: 180,
             hp: 8000, // Stage 2 boss - 適度な難易度
             bulletDamage: 25, // バランス調整
             color: '#9370DB', // 紫色（メインカラー）
             secondaryColor: '#DC143C', // 赤色（角・翼）
             accentColor: '#4169E1', // 青色（MINERALボール）
-            glowColor: '#FF69B4', // ピンクの光
-            spriteScale: 14.0625 // 225px / 16px = 14.0625
+            glowColor: '#FF69B4' // ピンクの光
         },
         {
-            name: '氷結の魔王',
-            width: 270,
-            height: 270,
+            name: 'ビタミンエンジェル',
+            width: 180,
+            height: 180,
             hp: 20000, // Stage 3 boss - 300% increase for final boss difficulty
             bulletDamage: 45, // Tripled damage for ultimate challenge
-            color: '#191970',
-            secondaryColor: '#4169E1',
-            accentColor: '#87CEEB',
-            glowColor: '#00BFFF',
-            spriteScale: 16.875 // 270px / 16px = 16.875
+            color: '#FFD700', // ゴールド
+            secondaryColor: '#FF69B4', // ピンク
+            accentColor: '#87CEEB', // スカイブルー
+            glowColor: '#FFFFFF' // 白い光
         }
     ]
 };

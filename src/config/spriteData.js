@@ -1,20 +1,135 @@
 import { COLORS } from './gameConfig.js';
+import { imageSpriteLoader } from '../systems/ImageSpriteLoader.js';
 
-// ドット絵スプライトデータ（16x16ピクセル）
+// Enhanced sprite data supporting both pixel arrays and image files
+// Sprite types:
+// - Array: Traditional pixel array sprites (existing system)
+// - Object: New image sprite definition with { type: 'image', src: 'path', width: 32, height: 32 }
 export const SPRITE_DATA = {
-    // ポポロン（MSX魔城伝説風の青い鎧戦士・後ろ姿・角付きヘルメット）
+    // Example image sprite for Popolon (high-quality version)
+    // Uncomment this to use image sprite instead of pixel array
+    /*
+    popolon_image: {
+        type: 'image',
+        src: './src/assets/sprites/characters/popolon.png',
+        width: 32,
+        height: 32,
+        // Optional sprite sheet properties:
+        // frameX: 0,
+        // frameY: 0,
+        // frameWidth: 32,
+        // frameHeight: 32
+    },
+    */
+
+    // Example image sprites for other important characters
+    // These demonstrate different use cases of the image sprite system
+    /*
+    aphrodite_image: {
+        type: 'image',
+        src: './src/assets/sprites/characters/aphrodite.png',
+        width: 32,
+        height: 32
+    },
+    
+    medusa_boss_image: {
+        type: 'image',
+        src: './src/assets/sprites/bosses/medusa.png',
+        width: 64,
+        height: 64
+    },
+    
+    flame_demon_image: {
+        type: 'image',
+        src: './src/assets/sprites/bosses/flame_demon.png',
+        width: 64,
+        height: 64
+    },
+    
+    // Example of sprite sheet usage
+    enemy_spritesheet: {
+        type: 'image',
+        src: './src/assets/sprites/enemies/enemy_sheet.png',
+        width: 32,
+        height: 32,
+        frameX: 0,      // X position of frame in sprite sheet
+        frameY: 0,      // Y position of frame in sprite sheet
+        frameWidth: 32, // Width of each frame
+        frameHeight: 32 // Height of each frame
+    },
+    */
+
+    // High-quality boss sprites (PNG format -> scaled in game)
+    vitamin_demon: {
+        type: 'image',
+        src: '/sprites/bosses/vitamin_demon.png',
+        width: 256,
+        height: 256
+    },
+    
+    mineral_demon: {
+        type: 'image',
+        src: '/sprites/bosses/mineral_demon.png',
+        width: 256,
+        height: 256
+    },
+    
+    vitamin_angel: {
+        type: 'image',
+        src: '/sprites/bosses/vitamin_angel.png',
+        width: 256,
+        height: 256
+    },
+
+    // 5大栄養素ボール (64x64)
+    carbohydrate_ball: {
+        type: 'image',
+        src: '/sprites/items/carbohydrate_ball.png',
+        width: 64,
+        height: 64
+    },
+    
+    protein_ball: {
+        type: 'image',
+        src: '/sprites/items/protein_ball.png',
+        width: 64,
+        height: 64
+    },
+    
+    fat_ball: {
+        type: 'image',
+        src: '/sprites/items/fat_ball.png',
+        width: 64,
+        height: 64
+    },
+    
+    vitamin_ball: {
+        type: 'image',
+        src: '/sprites/items/vitamin_ball.png',
+        width: 64,
+        height: 64
+    },
+    
+    mineral_ball: {
+        type: 'image',
+        src: '/sprites/items/mineral_ball.png',
+        width: 64,
+        height: 64
+    },
+
+    // Traditional pixel array sprite for Popolon (MSX魔城伝説風の青い鎧戦士・後ろ姿・角付きヘルメット）
     popolon: [
-        [0,0,0,4,4,4,4,4,4,4,4,4,4,0,0,0],
-        [0,0,4,4,4,4,4,4,4,4,4,4,4,4,0,0],
-        [0,4,4,4,4,4,4,4,4,4,4,4,4,4,4,0],
-        [4,4,4,18,18,4,4,4,4,4,4,18,18,4,4,4],
-        [4,11,11,11,11,11,11,11,11,11,11,11,11,11,11,4],
-        [4,11,14,14,14,11,11,11,11,11,11,14,14,14,11,4],
-        [4,11,11,14,11,11,11,11,11,11,11,11,14,11,11,4],
+        [0,0,0,0,4,4,4,4,4,4,4,4,0,0,0,0],
+        [0,0,0,4,4,18,18,4,4,18,18,4,4,0,0,0],
+        [0,0,4,4,18,18,18,18,18,18,18,18,4,4,0,0],
+        [0,4,4,18,18,4,4,4,4,4,4,18,18,4,4,0],
+        [4,4,11,11,11,11,11,11,11,11,11,11,11,11,4,4],
+        [4,11,11,14,14,11,11,11,11,11,11,14,14,11,11,4],
+        [4,11,11,11,14,11,11,2,2,11,11,14,11,11,11,4],
         [4,11,11,11,11,11,2,2,2,2,11,11,11,11,11,4],
         [0,4,11,11,11,2,2,2,2,2,2,11,11,11,4,0],
         [0,4,4,11,11,2,2,14,14,2,2,11,11,4,4,0],
-        [0,0,4,4,4,2,2,2,2,2,2,4,4,4,0,0],
+        [0,0,4,4,2,2,2,2,2,2,2,2,4,4,0,0],
         [0,0,4,4,2,2,14,0,0,14,2,2,4,4,0,0],
         [0,4,4,4,2,2,0,0,0,0,2,2,4,4,4,0],
         [4,4,4,4,4,4,0,0,0,0,4,4,4,4,4,4],
@@ -24,17 +139,17 @@ export const SPRITE_DATA = {
     
     // 高速モード用ポポロン（MSX風赤い鎧戦士・後ろ姿・角付きヘルメット）
     popolon_speed: [
-        [0,0,0,4,4,4,4,4,4,4,4,4,4,0,0,0],
-        [0,0,4,4,4,4,4,4,4,4,4,4,4,4,0,0],
-        [0,4,4,4,4,4,4,4,4,4,4,4,4,4,4,0],
-        [4,4,4,18,18,4,4,4,4,4,4,18,18,4,4,4],
-        [4,15,15,15,15,15,15,15,15,15,15,15,15,15,15,4],
-        [4,15,16,16,16,15,15,15,15,15,15,16,16,16,15,4],
-        [4,15,15,16,15,15,15,15,15,15,15,15,16,15,15,4],
+        [0,0,0,0,4,4,4,4,4,4,4,4,0,0,0,0],
+        [0,0,0,4,4,18,18,4,4,18,18,4,4,0,0,0],
+        [0,0,4,4,18,18,18,18,18,18,18,18,4,4,0,0],
+        [0,4,4,18,18,4,4,4,4,4,4,18,18,4,4,0],
+        [4,4,15,15,15,15,15,15,15,15,15,15,15,15,4,4],
+        [4,15,15,16,16,15,15,15,15,15,15,16,16,15,15,4],
+        [4,15,15,15,16,15,15,3,3,15,15,16,15,15,15,4],
         [4,15,15,15,15,15,3,3,3,3,15,15,15,15,15,4],
         [0,4,15,15,15,3,3,3,3,3,3,15,15,15,4,0],
         [0,4,4,15,15,3,3,16,16,3,3,15,15,4,4,0],
-        [0,0,4,4,4,3,3,3,3,3,3,4,4,4,0,0],
+        [0,0,4,4,3,3,3,3,3,3,3,3,4,4,0,0],
         [0,0,4,4,3,3,16,0,0,16,3,3,4,4,0,0],
         [0,4,4,4,3,3,0,0,0,0,3,3,4,4,4,0],
         [4,4,4,4,4,4,0,0,0,0,4,4,4,4,4,4],
@@ -122,7 +237,7 @@ export const SPRITE_DATA = {
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     ],
     
-    // ？ボックス - シンプルな箱に大きな黒い？マーク
+    // ?ボックス - シンプルな箱に大きな黒い?マーク
     questionBox: [
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         [0,7,7,7,7,7,7,7,7,7,7,7,7,7,7,0],
@@ -142,44 +257,67 @@ export const SPRITE_DATA = {
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     ],
     
+    // ビタミンデーモン（PNG使用 - 高品質画像スプライト）
+    // PNG定義は上部（行63-68）にあります
+    
     // ビタミンデーモン（ステージ1ボス）- 角の生えた可愛い悪魔の女の子
     medusa: [
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,5,5,0,0,0,0,5,5,0,0,0,0],
-        [0,0,0,5,5,5,14,14,14,14,5,5,5,0,0,0],
-        [0,0,5,5,14,14,14,14,14,14,14,14,5,5,0,0],
-        [0,5,5,14,14,14,14,14,14,14,14,14,14,5,5,0],
-        [0,5,14,14,1,1,14,14,14,14,1,1,14,14,5,0],
-        [5,5,14,14,1,0,1,14,14,1,0,1,14,14,5,5],
-        [5,14,14,14,1,1,14,14,14,14,1,1,14,14,14,5],
-        [5,14,14,14,14,14,14,5,5,14,14,14,14,14,14,5],
-        [5,14,14,14,14,5,5,5,5,5,5,14,14,14,14,5],
-        [0,5,14,14,14,14,5,0,0,5,14,14,14,14,5,0],
-        [0,5,5,14,14,14,14,14,14,14,14,14,14,5,5,0],
-        [0,0,5,5,3,3,14,14,14,14,3,3,5,5,0,0],
-        [0,0,0,5,5,3,3,14,14,3,3,5,5,0,0,0],
-        [0,0,0,0,5,5,3,3,3,3,5,5,0,0,0,0],
-        [0,0,0,0,0,5,5,5,5,5,5,0,0,0,0,0]
+        [0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0],
+        [0,0,0,1,1,1,16,16,16,16,1,1,1,0,0,0],
+        [0,0,1,1,16,16,16,16,16,16,16,16,1,1,0,0],
+        [0,1,1,16,16,16,16,16,16,16,16,16,16,1,1,0],
+        [1,1,16,16,16,16,16,16,16,16,16,16,16,16,1,1],
+        [1,16,16,16,1,1,16,16,16,16,1,1,16,16,16,1],
+        [1,16,16,1,14,0,1,16,16,1,0,14,1,16,16,1],
+        [1,16,16,16,1,1,16,16,16,16,1,1,16,16,16,1],
+        [1,16,16,16,16,16,3,3,3,3,16,16,16,16,16,1],
+        [1,16,16,16,16,3,3,1,1,3,3,16,16,16,16,1],
+        [0,1,16,16,16,16,3,1,1,3,16,16,16,16,1,0],
+        [0,1,1,16,16,16,16,16,16,16,16,16,16,1,1,0],
+        [0,0,1,1,5,5,16,16,16,16,5,5,1,1,0,0],
+        [0,0,0,1,1,5,5,16,16,5,5,1,1,0,0,0],
+        [0,0,0,0,1,1,5,5,5,5,1,1,0,0,0,0],
+        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0]
     ],
     
-    // ビタミンデーモン（角の生えた可愛い悪魔の女の子風ボス）
+    // フレイムデーモンロード（ビタミンデーモンの別名）
     flame_demon_lord: [
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,5,5,0,0,0,0,5,5,0,0,0,0],
-        [0,0,0,5,5,5,14,14,14,14,5,5,5,0,0,0],
-        [0,0,5,5,14,14,14,14,14,14,14,14,5,5,0,0],
-        [0,5,5,14,14,14,14,14,14,14,14,14,14,5,5,0],
-        [0,5,14,14,1,1,14,14,14,14,1,1,14,14,5,0],
-        [5,5,14,14,1,0,1,14,14,1,0,1,14,14,5,5],
-        [5,14,14,14,1,1,14,14,14,14,1,1,14,14,14,5],
-        [5,14,14,14,14,14,14,5,5,14,14,14,14,14,14,5],
-        [5,14,14,14,14,5,5,5,5,5,5,14,14,14,14,5],
-        [0,5,14,14,14,14,5,0,0,5,14,14,14,14,5,0],
-        [0,5,5,14,14,14,14,14,14,14,14,14,14,5,5,0],
-        [0,0,5,5,3,3,14,14,14,14,3,3,5,5,0,0],
-        [0,0,0,5,5,3,3,14,14,3,3,5,5,0,0,0],
-        [0,0,0,0,5,5,3,3,3,3,5,5,0,0,0,0],
-        [0,0,0,0,0,5,5,5,5,5,5,0,0,0,0,0]
+        [0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0],
+        [0,0,0,1,1,1,16,16,16,16,1,1,1,0,0,0],
+        [0,0,1,1,16,16,16,16,16,16,16,16,1,1,0,0],
+        [0,1,1,16,16,16,16,16,16,16,16,16,16,1,1,0],
+        [1,1,16,16,16,16,16,16,16,16,16,16,16,16,1,1],
+        [1,16,16,16,1,1,16,16,16,16,1,1,16,16,16,1],
+        [1,16,16,1,14,0,1,16,16,1,0,14,1,16,16,1],
+        [1,16,16,16,1,1,16,16,16,16,1,1,16,16,16,1],
+        [1,16,16,16,16,16,3,3,3,3,16,16,16,16,16,1],
+        [1,16,16,16,16,3,3,1,1,3,3,16,16,16,16,1],
+        [0,1,16,16,16,16,3,1,1,3,16,16,16,16,1,0],
+        [0,1,1,16,16,16,16,16,16,16,16,16,16,1,1,0],
+        [0,0,1,1,5,5,16,16,16,16,5,5,1,1,0,0],
+        [0,0,0,1,1,5,5,16,16,5,5,1,1,0,0,0],
+        [0,0,0,0,1,1,5,5,5,5,1,1,0,0,0,0],
+        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0]
+    ],
+    
+    // ミネラルデーモン（紫肌、黒髪、赤角の神秘的な悪魔）
+    mineral_demon: [
+        [0,0,0,0,0,3,3,0,0,3,3,0,0,0,0,0],
+        [0,0,0,3,3,3,1,1,1,1,3,3,3,0,0,0],
+        [0,0,3,3,1,1,1,1,1,1,1,1,3,3,0,0],
+        [0,3,3,1,1,1,1,1,1,1,1,1,1,3,3,0],
+        [3,3,1,1,1,1,1,1,1,1,1,1,1,1,3,3],
+        [3,1,1,1,14,14,1,1,1,1,14,14,1,1,1,3],
+        [3,1,1,14,0,0,14,1,1,14,0,0,14,1,1,3],
+        [3,1,1,1,14,14,1,1,1,1,14,14,1,1,1,3],
+        [3,1,1,1,1,1,5,5,5,5,1,1,1,1,1,3],
+        [3,1,1,1,1,5,5,14,14,5,5,1,1,1,1,3],
+        [0,3,1,1,1,1,5,14,14,5,1,1,1,1,3,0],
+        [0,3,3,1,1,1,1,1,1,1,1,1,1,3,3,0],
+        [0,0,3,3,11,11,1,1,1,1,11,11,3,3,0,0],
+        [0,0,0,3,3,11,11,1,1,11,11,3,3,0,0,0],
+        [0,0,0,0,3,3,11,11,11,11,3,3,0,0,0,0],
+        [0,0,0,0,0,3,3,3,3,3,3,0,0,0,0,0]
     ],
     
     // 氷結の魔王（MSX Makiden style ice demon boss）
@@ -200,6 +338,86 @@ export const SPRITE_DATA = {
         [0,0,0,0,14,14,14,14,14,14,14,14,0,0,0,0],
         [0,0,0,0,0,14,14,14,14,14,14,0,0,0,0,0],
         [0,0,0,0,0,0,14,14,14,14,0,0,0,0,0,0]
+    ],
+    
+    // ガーフルート（赤い悪魔 - シンプルで可愛い悪魔）
+    garlic_fruit: [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,3,3,3,3,3,3,3,3,0,0,0,0],
+        [0,0,0,3,3,3,3,3,3,3,3,3,3,0,0,0],
+        [0,0,3,3,3,3,3,3,3,3,3,3,3,3,0,0],
+        [0,3,3,3,3,3,3,3,3,3,3,3,3,3,3,0],
+        [0,3,3,1,1,3,3,3,3,3,3,1,1,3,3,0],
+        [3,3,3,1,0,1,3,3,3,3,1,0,1,3,3,3],
+        [3,3,3,1,1,3,3,3,3,3,3,1,1,3,3,3],
+        [3,3,3,3,3,3,3,1,1,3,3,3,3,3,3,3],
+        [3,3,3,3,3,3,1,1,1,1,3,3,3,3,3,3],
+        [0,3,3,3,3,3,3,1,1,3,3,3,3,3,3,0],
+        [0,3,3,3,3,3,3,3,3,3,3,3,3,3,3,0],
+        [0,0,3,3,3,3,3,3,3,3,3,3,3,3,0,0],
+        [0,0,0,3,3,3,3,3,3,3,3,3,3,0,0,0],
+        [0,0,0,0,3,3,3,3,3,3,3,3,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    ],
+    
+    // レッドルデーモンキング（紫の悪魔王 - 杖を持った威厳ある悪魔）
+    red_demon_king: [
+        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,1,1,1,5,5,5,5,1,1,1,0,0,0],
+        [0,0,1,1,5,5,5,5,5,5,5,5,1,1,0,0],
+        [0,1,1,5,5,5,5,5,5,5,5,5,5,1,1,0],
+        [1,1,5,5,5,5,5,5,5,5,5,5,5,5,1,1],
+        [1,5,5,5,1,1,5,5,5,5,1,1,5,5,5,1],
+        [1,5,5,1,3,0,1,5,5,1,0,3,1,5,5,1],
+        [1,5,5,5,1,1,5,5,5,5,1,1,5,5,5,1],
+        [1,5,5,5,5,5,16,16,16,16,5,5,5,5,5,1],
+        [1,5,5,5,5,16,16,1,1,16,16,5,5,5,5,1],
+        [0,1,5,5,5,5,16,1,1,16,5,5,5,5,1,0],
+        [0,1,1,5,5,5,5,5,5,5,5,5,5,1,1,0],
+        [0,0,1,1,11,11,5,5,5,5,11,11,1,1,0,0],
+        [0,0,0,1,1,11,11,5,5,11,11,1,1,0,0,0],
+        [0,0,0,0,1,1,11,11,11,11,1,1,0,0,0,0],
+        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0]
+    ],
+    
+    // シュガールデーモン（ピンクのスライム系 - 可愛い砂糖悪魔）
+    sugar_demon: [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,7,7,7,7,7,7,7,7,0,0,0,0],
+        [0,0,0,7,7,7,7,7,7,7,7,7,7,0,0,0],
+        [0,0,7,7,7,7,7,7,7,7,7,7,7,7,0,0],
+        [0,7,7,7,7,7,7,7,7,7,7,7,7,7,7,0],
+        [0,7,7,1,1,7,7,7,7,7,7,1,1,7,7,0],
+        [7,7,7,1,14,1,7,7,7,7,1,14,1,7,7,7],
+        [7,7,7,1,1,7,7,7,7,7,7,1,1,7,7,7],
+        [7,7,7,7,7,7,3,3,3,3,7,7,7,7,7,7],
+        [7,7,7,7,7,3,3,1,1,3,3,7,7,7,7,7],
+        [0,7,7,7,7,7,3,1,1,3,7,7,7,7,7,0],
+        [0,7,7,7,7,7,7,7,7,7,7,7,7,7,7,0],
+        [0,0,7,7,7,7,7,7,7,7,7,7,7,7,0,0],
+        [0,0,0,7,7,7,7,7,7,7,7,7,7,0,0,0],
+        [0,0,0,0,7,7,7,7,7,7,7,7,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    ],
+    
+    // アフロディーテ姫（オレンジブロンドの髪、白いドレス、優雅な姫君）
+    aphrodite: [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,16,16,16,16,16,16,16,16,0,0,0,0],
+        [0,0,0,16,16,16,16,16,16,16,16,16,16,0,0,0],
+        [0,0,16,16,16,16,16,16,16,16,16,16,16,16,0,0],
+        [0,16,16,16,16,16,16,16,16,16,16,16,16,16,16,0],
+        [0,16,16,1,1,16,16,16,16,16,16,1,1,16,16,0],
+        [16,16,16,1,14,1,16,16,16,16,1,14,1,16,16,16],
+        [16,16,16,1,1,16,16,16,16,16,16,1,1,16,16,16],
+        [16,16,16,16,16,16,3,3,3,3,16,16,16,16,16,16],
+        [16,16,16,16,16,3,3,1,1,3,3,16,16,16,16,16],
+        [0,16,16,16,16,16,3,1,1,3,16,16,16,16,16,0],
+        [0,16,16,8,8,8,8,8,8,8,8,8,8,16,16,0],
+        [0,0,16,8,8,8,8,8,8,8,8,8,8,16,0,0],
+        [0,0,0,8,8,8,8,8,8,8,8,8,8,0,0,0],
+        [0,0,0,0,8,8,8,8,8,8,8,8,0,0,0,0],
+        [0,0,0,0,0,8,8,8,8,8,8,0,0,0,0,0]
     ],
     
     // 可愛いビタミンボール風アイテム
@@ -382,37 +600,168 @@ export const SPRITE_DATA = {
         [0,0,0,0,0,15,11,11,11,11,15,0,0,0,0,0],
         [0,0,0,0,0,0,15,15,15,15,0,0,0,0,0,0]
     ]
-};
+};;;
 
 /**
- * スプライト描画関数
- * @param {CanvasRenderingContext2D} ctx - Canvas 2Dコンテキスト
- * @param {string} spriteKey - スプライトの種類
- * @param {number} x - X座標
- * @param {number} y - Y座標
- * @param {number} scale - 拡大率
+ * Enhanced sprite drawing function supporting both pixel arrays and image files
+ * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
+ * @param {string} spriteKey - Sprite key
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {number} scale - Scale factor
+ * @param {Object} options - Additional rendering options
  */
-export function drawSprite(ctx, spriteKey, x, y, scale = 2) {
+export function drawSprite(ctx, spriteKey, x, y, scale = 2, options = {}) {
     try {
         const sprite = SPRITE_DATA[spriteKey];
-        if (!sprite || !Array.isArray(sprite)) return;
-        
-        for (let row = 0; row < sprite.length; row++) {
-            if (!sprite[row] || !Array.isArray(sprite[row])) continue;
-            for (let col = 0; col < sprite[row].length; col++) {
-                const colorIndex = sprite[row][col];
-                if (colorIndex !== 0 && COLORS[colorIndex]) { // 透明色以外かつ色が存在
-                    ctx.fillStyle = COLORS[colorIndex];
-                    ctx.fillRect(
-                        x + col * scale, 
-                        y + row * scale, 
-                        scale, 
-                        scale
-                    );
-                }
-            }
+        if (!sprite) {
+            console.warn('Sprite not found:', spriteKey);
+            return;
+        }
+
+        // Check sprite type and render accordingly
+        if (Array.isArray(sprite)) {
+            // Traditional pixel array sprite
+            drawPixelArraySprite(ctx, sprite, x, y, scale);
+        } else if (sprite.type === 'image') {
+            // Image sprite
+            drawImageSprite(ctx, sprite, x, y, scale, options);
+        } else {
+            console.warn('Unknown sprite type for:', spriteKey, sprite);
         }
     } catch (e) {
         console.warn('Error drawing sprite:', spriteKey, e);
     }
+}
+
+/**
+ * Draw traditional pixel array sprite
+ * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
+ * @param {Array} sprite - Pixel array data
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {number} scale - Scale factor
+ */
+function drawPixelArraySprite(ctx, sprite, x, y, scale) {
+    for (let row = 0; row < sprite.length; row++) {
+        if (!sprite[row] || !Array.isArray(sprite[row])) continue;
+        for (let col = 0; col < sprite[row].length; col++) {
+            const colorIndex = sprite[row][col];
+            if (colorIndex !== 0 && COLORS[colorIndex]) { // Non-transparent color
+                ctx.fillStyle = COLORS[colorIndex];
+                ctx.fillRect(
+                    x + col * scale, 
+                    y + row * scale, 
+                    scale, 
+                    scale
+                );
+            }
+        }
+    }
+}
+
+/**
+ * Draw image sprite
+ * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
+ * @param {Object} sprite - Image sprite definition
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {number} scale - Scale factor
+ * @param {Object} options - Additional rendering options
+ */
+function drawImageSprite(ctx, sprite, x, y, scale, options = {}) {
+    const image = imageSpriteLoader.getCachedImage(sprite.src);
+    
+    if (!image) {
+        // Image not loaded yet - draw placeholder or fallback
+        drawSpritePlaceholder(ctx, x, y, sprite.width * scale, sprite.height * scale, sprite.src);
+        
+        // Attempt to load the image if not already loading
+        if (!imageSpriteLoader.isImageLoaded(sprite.src) && !imageSpriteLoader.isImageFailed(sprite.src)) {
+            imageSpriteLoader.loadImage(sprite.src).catch(error => {
+                console.warn('Failed to load sprite image:', sprite.src, error);
+            });
+        }
+        return;
+    }
+
+    // Calculate drawing dimensions
+    const drawWidth = sprite.width * scale;
+    const drawHeight = sprite.height * scale;
+    
+    // Handle sprite sheet (if defined)
+    if (sprite.frameX !== undefined && sprite.frameY !== undefined) {
+        // Draw specific frame from sprite sheet
+        const frameWidth = sprite.frameWidth || sprite.width;
+        const frameHeight = sprite.frameHeight || sprite.height;
+        
+        ctx.drawImage(
+            image,
+            sprite.frameX, sprite.frameY, frameWidth, frameHeight, // Source
+            x, y, drawWidth, drawHeight // Destination
+        );
+    } else {
+        // Draw entire image
+        ctx.drawImage(image, x, y, drawWidth, drawHeight);
+    }
+    
+    // Apply additional effects if specified
+    if (options.tint) {
+        applyTintEffect(ctx, x, y, drawWidth, drawHeight, options.tint);
+    }
+    
+    if (options.alpha !== undefined && options.alpha < 1.0) {
+        // Alpha blending is handled by setting globalAlpha before calling drawSprite
+        // This is just for reference
+    }
+}
+
+/**
+ * Draw placeholder for missing image sprites
+ * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {number} width - Width
+ * @param {number} height - Height
+ * @param {string} imagePath - Image path for debug info
+ */
+function drawSpritePlaceholder(ctx, x, y, width, height, imagePath) {
+    // Draw a simple colored rectangle as placeholder
+    ctx.fillStyle = '#ff00ff'; // Magenta placeholder
+    ctx.fillRect(x, y, width, height);
+    
+    // Draw border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, width, height);
+    
+    // Optionally draw "?" in center for debugging
+    if (width > 16 && height > 16) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `${Math.min(width, height) / 2}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', x + width / 2, y + height / 2);
+    }
+}
+
+/**
+ * Apply tint effect to drawn sprite
+ * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {number} width - Width
+ * @param {number} height - Height
+ * @param {string} tintColor - Tint color
+ */
+function applyTintEffect(ctx, x, y, width, height, tintColor) {
+    const previousCompositeOperation = ctx.globalCompositeOperation;
+    const previousFillStyle = ctx.fillStyle;
+    
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = tintColor;
+    ctx.fillRect(x, y, width, height);
+    
+    ctx.globalCompositeOperation = previousCompositeOperation;
+    ctx.fillStyle = previousFillStyle;
 }

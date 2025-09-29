@@ -19,6 +19,7 @@ import { CollisionSystem } from './systems/CollisionSystem.js';
 import { ParticleSystem } from './systems/ParticleSystem.js';
 import { BackgroundSystem } from './systems/BackgroundSystem.js';
 import { WeaponSystem } from './systems/WeaponSystem.js';
+import { spritePreloader } from './systems/SpritePreloader.js';
 
 // オーディオシステム
 import { AudioManager } from './audio/AudioManager.js';
@@ -101,6 +102,16 @@ class Game {
             
             // レンダラー初期化
             this.renderer = new Renderer(this.canvas);
+            
+            // スプライト事前読み込み
+            console.log('Starting sprite preloading...');
+            await spritePreloader.preloadSprites((progress) => {
+                console.log(`Sprite loading progress: ${Math.round(progress.progress * 100)}% (${progress.loaded}/${progress.total})`);
+                if (progress.failed > 0) {
+                    console.warn(`Failed to load ${progress.failed} sprites`);
+                }
+            });
+            console.log('Sprite preloading completed');
             
             // オーディオ初期化
             await this.initAudio();
@@ -633,18 +644,21 @@ class Game {
         this.gameState.initializeState();
         
         // プレイヤー初期化
-        this.initializePlayer();
+        this.initPlayer();
         
         // 武器システム初期化
-        this.weaponSystem.initializeState();
+        this.weaponSystem.reset();
         
         // 画面クリア
         this.enemies = [];
         this.bullets = [];
         this.enemyBullets = [];
         this.powerUps = [];
-        this.explosions = [];
-        this.particles = [];
+        
+        // パーティクルシステムクリア
+        if (this.particleSystem) {
+            this.particleSystem.clear();
+        }
         
         // ボス戦モードとして設定
         this.gameState.isBossMode = true;
@@ -653,7 +667,7 @@ class Game {
         
         // 適切なステージ設定
         this.gameState.currentStage = bossIndex;
-        this.backgroundSystem.setStage(bossIndex);
+        this.backgroundSystem.changeStage(bossIndex);
         
         // ボス生成
         this.boss = BossFactory.createBoss(bossIndex);
@@ -745,6 +759,14 @@ class Game {
         }
         
         if (this.gameState.isPaused) {
+            return;
+        }
+        
+        // ゲームクリア処理 - エンディング画面に遷移
+        if (this.gameState.gameCleared && this.currentScreen === 'game') {
+            console.log('🎬 Game cleared detected! Transitioning to ending cutscene...');
+            this.currentScreen = 'ending';
+            this.gameScreens.transitionTo('ending');
             return;
         }
         
@@ -1504,18 +1526,31 @@ class Game {
                 }
             }
             
+            // ボス撃破時のbossIndexを記録
+            const defeatedBossIndex = this.boss.bossIndex;
+            
             // ボス状態リセット（GameStateのdefeatBoss()メソッドを使用）
             this.boss = null;
             this.gameState.defeatBoss();
             
-            // ボスモードの場合は勝利後にメニューに戻る
+            // ボスモードの場合の処理
             if (this.gameState.isBossMode) {
-                console.log('🏆 Boss Mode victory! Returning to menu...');
-                setTimeout(() => {
-                    this.currentScreen = 'menu';
-                    this.gameScreens.transitionTo('menu');
-                    this.gameState.isBossMode = false;
-                }, 3000); // 3秒後にメニューに戻る
+                // ステージ3（bossIndex=2）のビタミンエンジェルのみでエンディング
+                if (defeatedBossIndex === 2) {
+                    console.log('🏆 Boss Mode victory - Stage 3 (Vitamin Angel) defeated! Transitioning to ending cutscene...');
+                    setTimeout(() => {
+                        this.currentScreen = 'ending';
+                        this.gameScreens.transitionTo('ending');
+                        this.gameState.isBossMode = false;
+                    }, 2000); // 2秒後にエンディングへ
+                } else {
+                    console.log(`🏆 Boss Mode victory - Stage ${defeatedBossIndex + 1} defeated! Returning to menu...`);
+                    setTimeout(() => {
+                        this.currentScreen = 'menu';
+                        this.gameScreens.transitionTo('menu');
+                        this.gameState.isBossMode = false;
+                    }, 3000); // 3秒後にメニューに戻る
+                }
             } else {
                 // 通常モードの場合はステージ変更処理
                 const stageChanged = this.backgroundSystem.advanceToNextStage();
@@ -1524,7 +1559,15 @@ class Game {
                     // Zelda風ステージ名表示を開始
                     this.stageNameDisplay.showStageName(this.gameState.currentStage);
                 } else {
-                    console.log(`🏆 All stages completed! Game should show victory screen.`);
+                    console.log(`🏆 All stages completed! Transitioning to ending cutscene...`);
+                    // Check if game is cleared to trigger ending
+                    if (this.gameState.gameCleared) {
+                        console.log('🎬 Game cleared! Starting ending cutscene...');
+                        setTimeout(() => {
+                            this.currentScreen = 'ending';
+                            this.gameScreens.transitionTo('ending');
+                        }, 2000); // 2 second delay to let boss defeat effects play
+                    }
                 }
             }
             

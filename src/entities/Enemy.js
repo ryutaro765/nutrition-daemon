@@ -346,6 +346,15 @@ export class Enemy {
             case 'bomb_walker':
                 this.drawBombWalker(renderer);
                 break;
+            case 'garlic_fruit':
+                this.drawGarlicFruit(renderer);
+                break;
+            case 'red_demon_king':
+                this.drawRedDemonKing(renderer);
+                break;
+            case 'sugar_demon':
+                this.drawSugarDemon(renderer);
+                break;
             default:
                 renderer.drawRect(this.x, this.y, this.width, this.height, this.color);
                 break;
@@ -417,6 +426,18 @@ export class Enemy {
             // 通常時
             renderer.drawSprite('fried_fang', this.x, this.y, 3);
         }
+    }
+
+    drawGarlicFruit(renderer) {
+        renderer.drawSprite('garlic_fruit', this.x, this.y, 3);
+    }
+
+    drawRedDemonKing(renderer) {
+        renderer.drawSprite('red_demon_king', this.x, this.y, 3);
+    }
+
+    drawSugarDemon(renderer) {
+        renderer.drawSprite('sugar_demon', this.x, this.y, 3);
     }
 
     /**

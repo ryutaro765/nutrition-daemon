@@ -50,11 +50,12 @@ This project involves migrating a Makiden (Demon Castle Legend) style vertical w
 - **Bomb Walkers**: Red-black blinking, explosive contact damage
 
 #### Boss System
-- **3 Bosses**: Appear at end of each stage
-- **1st Boss**: Flame Demon Lord (simple attack patterns)
-- **2nd Boss**: Ice Demon Lord (predictive attacks + rotating bullet hell)
-- **3rd Boss**: Medusa (final boss, complex attack patterns)
+- **3 Bosses**: Nutrition-themed bosses at end of each stage
+- **1st Boss**: Vitamin Demon (cute demon girl with orange hair, black horns, purple outfit, holding fruits)
+- **2nd Boss**: Mineral Demon (mystical demon with purple skin, black hair, red horns)
+- **3rd Boss**: Final nutrition-themed boss (TBD - replacing traditional Medusa)
 - **Dedicated BGM**: Custom music for each boss
+- **Hybrid Sprite System**: PNG images supported alongside traditional pixel arrays
 
 #### Background & Terrain System
 - **5 Stages**: Grassland → Sunset → Night → Underground → Demon Realm
@@ -191,3 +192,19 @@ npm run dev
 - Uses Vite development server for ES6 module support
 - Hot reload enabled for development
 - All game features work properly including Tone.js audio system
+
+## Recent Major Updates (2025-09-28)
+
+### Implemented Features
+1. **Enhanced Sprite System**: Reference image-based character improvements
+2. **Nutrition-themed Boss System**: Vitamin Demon, Mineral Demon with PNG support
+3. **Popolon & Aphrodite Rescue Ending**: Complete cutscene with romantic dialogue
+4. **Boss Mode Fixes**: Resolved critical freezing and method errors
+5. **Hybrid Sprite System**: PNG/JPG image support alongside pixel arrays
+6. **Zelda-style Stage Display**: 5-second stage name presentation system
+
+### Current Status
+- ✅ All major systems operational
+- ✅ Hybrid sprite system ready for high-quality PNG assets
+- ✅ Boss Mode fully functional for testing
+- ⏳ Vitamin Demon PNG implementation in progress

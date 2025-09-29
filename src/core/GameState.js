@@ -340,14 +340,15 @@ export class GameState {
         this.musicState.isBossMusic = false;
         this.musicState.currentBossMusic = 0;
 
-        // 最終ボス撃破でゲームクリア
-        if (this.bossesDefeated >= 3) {
+        // 通常モードの場合は最終ボス撃破でゲームクリア
+        // ボスモードの場合はmain.jsで個別制御
+        if (!this.isBossMode && this.bossesDefeated >= 3) {
             this.gameCleared = true;
             this.musicState.isVictoryMusic = true;
-            console.log('Game Cleared!');
+            console.log(`Game Cleared! (Normal Mode)`);
         }
 
-        console.log(`Boss defeated! Bosses defeated: ${this.bossesDefeated}`);
+        console.log(`Boss defeated! Bosses defeated: ${this.bossesDefeated}, Boss Mode: ${this.isBossMode}`);
     }
 
     /**

@@ -93,21 +93,21 @@ export class Boss {
             // Set boss type based on index
             switch(this.bossIndex) {
                 case 0:
-                    this.type = 'medusa';
+                    this.type = 'vitamin_demon';
                     break;
                 case 1:
-                    this.type = 'flame_demon_lord';
+                    this.type = 'mineral_demon';
                     break;
                 case 2:
-                    this.type = 'ice_demon_lord';
+                    this.type = 'vitamin_angel';
                     break;
                 default:
-                    this.type = 'flame_demon_lord';
+                    this.type = 'vitamin_demon';
             }
             
-            if (config.spriteScale) {
-                this.spriteScale = config.spriteScale;
-            }
+            // All bosses now use high-res PNG, skip old sprite scale
+            // PNG bosses use fixed scale values in drawMain()
+            // No spriteScale from config needed for PNG bosses
         }
     }
 
@@ -738,14 +738,14 @@ export class Boss {
     drawMain(renderer) {
         // 全てのボスをスプライトで描画
         switch (this.type) {
-            case 'medusa':
-                renderer.drawSprite('medusa', this.x, this.y, this.spriteScale || 11.25);
+            case 'vitamin_demon':
+                renderer.drawSprite('vitamin_demon', this.x, this.y, 0.7); // 180px / 256px = 0.7
                 break;
-            case 'flame_demon_lord':
-                renderer.drawSprite('flame_demon_lord', this.x, this.y, this.spriteScale || 14.0625); // 225px / 16px = 14.0625
+            case 'mineral_demon':
+                renderer.drawSprite('mineral_demon', this.x, this.y, 0.7); // 180px / 256px = 0.7
                 break;
-            case 'ice_demon_lord':
-                renderer.drawSprite('ice_demon_lord', this.x, this.y, this.spriteScale || 16.875); // 270px / 16px = 16.875
+            case 'vitamin_angel':
+                renderer.drawSprite('vitamin_angel', this.x, this.y, 0.7); // 180px / 256px = 0.7
                 break;
             default:
                 // フォールバック（従来の描画）
