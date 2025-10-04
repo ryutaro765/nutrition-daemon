@@ -174,12 +174,13 @@ export class WeaponSystem {
     createNormalShot(player, gameState) {
         const weaponLevel = Math.min(this.currentLevel, this.maxLevel);
         // console.log('🎯 createNormalShot called, weaponLevel:', weaponLevel, 'currentLevel:', this.currentLevel);
-        const bullets = BulletFactory.createPlayerBullets(weaponLevel, player.x + player.width / 2, player.y);
+        // PNG画像は86px(256*0.336)なので、中央は43px
+        const bullets = BulletFactory.createPlayerBullets(weaponLevel, player.x + 43, player.y);
         // console.log('🎯 BulletFactory returned:', bullets.length, 'bullets');
-        
+
         // 連射ボーナス適用
         if (this.rapidFireBonus && weaponLevel >= 5) {
-            const bonusBullets = BulletFactory.createPlayerBullets(weaponLevel, player.x + player.width / 2, player.y);
+            const bonusBullets = BulletFactory.createPlayerBullets(weaponLevel, player.x + 43, player.y);
             // ボーナス弾を少しずらして配置
             for (const bullet of bonusBullets) {
                 bullet.x += (Math.random() - 0.5) * 10;
@@ -205,8 +206,8 @@ export class WeaponSystem {
         }
         
         this.laserAmmo--;
-        
-        const bullets = BulletFactory.createPlayerBullets(1, player.x + player.width / 2, player.y); // レーザーは武器レベル1として生成
+
+        const bullets = BulletFactory.createPlayerBullets(1, player.x + 43, player.y); // レーザーは武器レベル1として生成
         
         // レーザー弾の強化
         for (const bullet of bullets) {
@@ -228,7 +229,7 @@ export class WeaponSystem {
      */
     createSpecialAttack(player, gameState) {
         const bullets = [];
-        const centerX = player.x + player.width / 2;
+        const centerX = player.x + 43; // PNG画像の中央
         const centerY = player.y;
         
         switch (this.currentLevel) {

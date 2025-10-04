@@ -347,17 +347,45 @@ export class Player {
      * @param {Object} gameState - ゲーム状態
      */
     drawMainBody(renderer, gameState) {
-        const spriteKey = gameState.isSpeedMode ? 'popolon_speed' : 'popolon';
+        // PNG画像を使用（256pxを約86pxに: 0.336倍）
+        const spriteKey = 'popolon_png';
         
         // アニメーション位置調整
         const drawX = this.x + this.headOffset;
         const drawY = this.y - this.bodyOffset;
         
-        // メインスプライト描画（2.25倍サイズ）
-        renderer.drawSprite(spriteKey, drawX, drawY, 2.25);
+        // スピードモード時は赤い光のオーラエフェクト（キャラの外側）
+        if (gameState.isSpeedMode) {
+            const ctx = renderer.ctx;
+            ctx.save();
+            
+            // 外側の赤いグロー（パルス効果）
+            const pulseScale = 1 + Math.sin(Date.now() / 100) * 0.2;
+            const glowSize = 50 * pulseScale;
+            
+            const gradient = ctx.createRadialGradient(
+                drawX + 43, drawY + 43, 0,
+                drawX + 43, drawY + 43, glowSize
+            );
+            gradient.addColorStop(0, 'rgba(255, 0, 0, 0.6)');
+            gradient.addColorStop(0.5, 'rgba(255, 0, 0, 0.3)');
+            gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(drawX - 30, drawY - 30, 146, 146);
+            
+            // 残像エフェクト（3つの軌跡）
+            for (let i = 1; i <= 3; i++) {
+                const alpha = 0.2 - (i * 0.05);
+                ctx.globalAlpha = alpha;
+                renderer.drawSprite(spriteKey, drawX + (i * 3), drawY, 0.336);
+            }
+            
+            ctx.restore();
+        }
         
-        // 重厚な鎧の腕と足を追加描画
-        this.drawArmorDetails(renderer, gameState, drawX, drawY);
+        // PNGスプライト描画（メイン）
+        renderer.drawSprite(spriteKey, drawX, drawY, 0.336);
     }
 
     /**
@@ -468,7 +496,7 @@ export class Player {
     getShootPosition() {
         return {
             x: this.x + this.width / 2,
-            y: this.y
+            y: this.y + this.height / 2
         };
     }
 

@@ -54,14 +54,14 @@ export class BossIntroDisplay {
             },
             {
                 id: 2,
-                title: "最終魔王",
-                name: "氷結の魔王",
-                subtitle: "Ice Demon Lord, The Frozen Terror",
-                description: "絶対零度を操る最強の魔王。運命を決する最後の戦い",
-                color: "#191970",
-                titleColor: "#4169E1",
+                title: "第三の魔王",
+                name: "ビタミンエンジェル",
+                subtitle: "Vitamin Angel, The Holy Guardian",
+                description: "光の力を纏う天使。栄養の守護者が敵として立ち塞がる",
+                color: "#FFD700",
+                titleColor: "#FF69B4",
                 subtitleColor: "#87CEEB",
-                warningText: "最終決戦！"
+                warningText: "天使降臨！"
             }
         ];
         

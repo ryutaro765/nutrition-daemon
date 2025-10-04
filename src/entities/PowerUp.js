@@ -115,6 +115,25 @@ export class PowerUp {
             case 'speed_mode':
                 gameState.activateSpeedMode(300); // 5秒間
                 break;
+            
+            // 栄養ボール効果（initializeTypeの説明と一致）
+            case 'carbohydrate': // 炭水化物 - エネルギー補給 +30HP
+                gameState.healHP(30);
+                break;
+            case 'protein': // タンパク質 - 筋力強化 武器レベルアップ
+                console.log(`🥩 PROTEIN PICKUP: Before upgrade - GameState=${gameState.weaponLevel}`);
+                gameState.upgradeWeapon(weaponSystem);
+                console.log(`🥩 PROTEIN PICKUP: After upgrade - GameState=${gameState.weaponLevel}`);
+                break;
+            case 'fat': // 脂質 - 持久力向上 スピードモード
+                gameState.activateSpeedMode(300); // 5秒間
+                break;
+            case 'vitamin': // ビタミン - 免疫力アップ +40HP
+                gameState.healHP(40);
+                break;
+            case 'mineral': // ミネラル - レーザー弾薬 +8
+                gameState.addLaserAmmo(8);
+                break;
         }
         
         this.shouldRemove = true;
@@ -147,30 +166,7 @@ export class PowerUp {
         const spriteSize = 64 * finalScale; // 64x64画像用
         console.log(`🎨 Drawing sprite: ${spriteKey} for type: ${this.type}`);
         renderer.drawSprite(spriteKey, -spriteSize / 2, -spriteSize / 2, finalScale);
-        
-        // 栄養素アルファベット表示
-        let letter = '';
-        switch (this.type) {
-            case 'carbohydrate': letter = 'C'; break;
-            case 'protein': letter = 'P'; break;
-            case 'fat': letter = 'F'; break;
-            case 'vitamin': letter = 'V'; break;
-            case 'mineral': letter = 'M'; break;
-        }
-        
-        if (letter) {
-            renderer.ctx.fillStyle = '#FFFFFF';
-            renderer.ctx.strokeStyle = '#000000';
-            renderer.ctx.lineWidth = 3;
-            renderer.ctx.font = `bold ${Math.floor(12 * finalScale)}px Arial`;
-            renderer.ctx.textAlign = 'center';
-            renderer.ctx.textBaseline = 'middle';
-            
-            // 文字に縁取りを追加
-            renderer.ctx.strokeText(letter, 0, 0);
-            renderer.ctx.fillText(letter, 0, 0);
-        }
-        
+
         // キラキラエフェクト
         this.drawSparkleEffect(renderer);
         
@@ -487,9 +483,16 @@ export class PowerUpFactory {
      * @param {number} y - Y座標
      * @returns {PowerUp} パワーアップオブジェクト
      */
+    /**
+     * ？ボックス破壊時のパワーアップ生成
+     * @param {number} x - X座標
+     * @param {number} y - Y座標
+     * @returns {PowerUp} パワーアップオブジェクト
+     */
     static createFromQuestionBox(x, y) {
-        const types = ['weapon', 'health', 'laser_ammo', 'speed_mode'];
-        const randomType = types[Math.floor(Math.random() * types.length)];
+        // 栄養ボール5種類からランダムに選択
+        const nutritionTypes = ['carbohydrate', 'protein', 'fat', 'vitamin', 'mineral'];
+        const randomType = nutritionTypes[Math.floor(Math.random() * nutritionTypes.length)];
         
         return new PowerUp({
             x: x - 18,

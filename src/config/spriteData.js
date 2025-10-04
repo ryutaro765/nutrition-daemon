@@ -59,24 +59,46 @@ export const SPRITE_DATA = {
     },
     */
 
+    // High-quality character sprites (PNG format -> scaled in game)
+    popolon_png: {
+        type: 'image',
+        src: '/sprites/characters/popolon.png',
+        width: 256,
+        height: 256
+    },
+
+    broccoli_princess_png: {
+        type: 'image',
+        src: '/sprites/characters/broccoli_princess.png',
+        width: 256,
+        height: 256
+    },
+
     // High-quality boss sprites (PNG format -> scaled in game)
-    vitamin_demon: {
+    vitamin_daemon: {
         type: 'image',
-        src: '/sprites/bosses/vitamin_demon.png',
+        src: '/sprites/bosses/vitamin_daemon.png',
         width: 256,
         height: 256
     },
-    
-    mineral_demon: {
+
+    mineral_daemon: {
         type: 'image',
-        src: '/sprites/bosses/mineral_demon.png',
+        src: '/sprites/bosses/mineral_daemon.png',
         width: 256,
         height: 256
     },
-    
+
     vitamin_angel: {
         type: 'image',
         src: '/sprites/bosses/vitamin_angel.png',
+        width: 256,
+        height: 256
+    },
+
+    vise_omega: {
+        type: 'image',
+        src: '/sprites/bosses/vise_omega.png',
         width: 256,
         height: 256
     },

@@ -93,16 +93,16 @@ export class Boss {
             // Set boss type based on index
             switch(this.bossIndex) {
                 case 0:
-                    this.type = 'vitamin_demon';
+                    this.type = 'vitamin_daemon';
                     break;
                 case 1:
-                    this.type = 'mineral_demon';
+                    this.type = 'mineral_daemon';
                     break;
                 case 2:
                     this.type = 'vitamin_angel';
                     break;
                 default:
-                    this.type = 'vitamin_demon';
+                    this.type = 'vitamin_daemon';
             }
             
             // All bosses now use high-res PNG, skip old sprite scale
@@ -238,17 +238,20 @@ export class Boss {
         const hpRatio = this.hp / this.maxHp;
         
         switch (this.bossIndex) {
-            case 0: // メデューサ
+            case 0: // ビタミンデーモン
                 bullets.push(...this.createMedusaAttack(player, centerX, centerY, hpRatio));
                 break;
-            case 1: // 炎獄の魔王
+            case 1: // ミネラルデーモン
                 bullets.push(...this.createFlameDemonAttack(player, centerX, centerY, hpRatio));
                 break;
-            case 2: // 氷結の魔王
+            case 2: // ビタミンエンジェル
                 bullets.push(...this.createIceDemonAttack(player, centerX, centerY, hpRatio));
                 break;
+            case 3: // ヴァイスオメガ（最終ボス）
+                bullets.push(...this.createViseOmegaAttack(player, centerX, centerY, hpRatio));
+                break;
         }
-        
+
         return bullets;
     }
 
@@ -496,7 +499,91 @@ export class Boss {
                 }
             }
         }
-        
+
+        return bullets;
+    }
+
+    /**
+     * ヴァイスオメガ攻撃パターン（最終ボス）
+     * @param {Object} player - プレイヤーオブジェクト
+     * @param {number} centerX - 中心X座標
+     * @param {number} centerY - 中心Y座標
+     * @param {number} hpRatio - HP比率
+     * @returns {Array} 弾丸配列
+     */
+    createViseOmegaAttack(player, centerX, centerY, hpRatio) {
+        const bullets = [];
+
+        if (hpRatio > 0.7) {
+            // ヴァイスオーブ単発投げ（高速＋追尾）
+            const dx = player.x - centerX;
+            const dy = player.y - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 0) {
+                const bullet = this.createSafeBullet({
+                    x: centerX - 12,
+                    y: centerY,
+                    vx: (dx / distance) * 7, // 超高速
+                    vy: (dy / distance) * 7,
+                    width: 24,
+                    height: 24,
+                    damage: this.bulletDamage,
+                    color: '#FF1493', // ディープピンク
+                    type: 'normal',
+                    isPlayerBullet: false
+                });
+
+                if (bullet) {
+                    bullets.push(bullet);
+                }
+            }
+        } else if (hpRatio > 0.3) {
+            // オメガフルーツ8方向同時投げ
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const bullet = this.createSafeBullet({
+                    x: centerX - 10,
+                    y: centerY,
+                    vx: Math.cos(angle) * 6,
+                    vy: Math.sin(angle) * 6,
+                    width: 20,
+                    height: 20,
+                    damage: this.bulletDamage + 5,
+                    color: '#FFD700', // ゴールド
+                    type: 'normal',
+                    isPlayerBullet: false
+                });
+
+                if (bullet) {
+                    bullets.push(bullet);
+                }
+            }
+        } else {
+            // 栄養爆弾弾幕＋全画面攻撃
+            const spiralTime = this.moveTimer * 0.08;
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2 + spiralTime;
+                const radius = 4 + Math.sin(spiralTime + i) * 2;
+                const bullet = this.createSafeBullet({
+                    x: centerX - 9,
+                    y: centerY,
+                    vx: Math.cos(angle) * radius,
+                    vy: Math.sin(angle) * radius,
+                    width: 18,
+                    height: 18,
+                    damage: this.bulletDamage + 10,
+                    color: '#9400D3', // ダークバイオレット
+                    type: 'normal',
+                    isPlayerBullet: false
+                });
+
+                if (bullet) {
+                    bullets.push(bullet);
+                }
+            }
+        }
+
         return bullets;
     }
 
@@ -512,14 +599,17 @@ export class Boss {
         // HP低下時のみ特殊攻撃 - more frequent threshold
         if (hpRatio < 0.7) { // 0.5->0.7 (earlier activation)
             switch (this.bossIndex) {
-                case 0: // メデューサ：蛇の呪い
+                case 0: // ビタミンデーモン：蛇の呪い
                     bullets.push(...this.createSnakeCurse(player));
                     break;
-                case 1: // 炎獄の魔王：火炎放射
+                case 1: // ミネラルデーモン：火炎放射
                     bullets.push(...this.createFlameBreath(player));
                     break;
-                case 2: // 氷結の魔王：氷の嵐
+                case 2: // ビタミンエンジェル：氷の嵐
                     bullets.push(...this.createIceStorm(player));
+                    break;
+                case 3: // ヴァイスオメガ：虹色全方位攻撃
+                    bullets.push(...this.createRainbowOmniAttack(player));
                     break;
             }
         }
@@ -596,6 +686,45 @@ export class Boss {
             }
         }
         
+        return bullets;
+    }
+
+    /**
+     * 虹色全方位攻撃（ヴァイスオメガ専用）
+     * @param {Object} player - プレイヤーオブジェクト
+     * @returns {Array} 弾丸配列
+     */
+    createRainbowOmniAttack(player) {
+        const bullets = [];
+
+        // 虹色全方位攻撃（32方向）
+        for (let i = 0; i < 32; i++) {
+            const angle = (i / 32) * Math.PI * 2;
+            const speed = 2 + Math.random() * 3;
+
+            // 虹色のカラーバリエーション
+            const colors = ['#FF1493', '#FFD700', '#00FFFF', '#9400D3', '#FF69B4'];
+            const color = colors[i % colors.length];
+
+            const bullet = this.createSafeBullet({
+                x: this.x + this.width / 2 - 12,
+                y: this.y + this.height / 2,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                width: 24,
+                height: 24,
+                damage: this.bulletDamage + 8,
+                color: color,
+                type: 'normal',
+                life: 120,
+                isPlayerBullet: false
+            });
+
+            if (bullet) {
+                bullets.push(bullet);
+            }
+        }
+
         return bullets;
     }
 
@@ -736,16 +865,53 @@ export class Boss {
      * @param {Object} renderer - レンダラー
      */
     drawMain(renderer) {
-        // 全てのボスをスプライトで描画
+        // 全てのボスを高解像度PNGスプライトで描画（1.2倍スケール）
         switch (this.type) {
-            case 'vitamin_demon':
-                renderer.drawSprite('vitamin_demon', this.x, this.y, 0.7); // 180px / 256px = 0.7
+            case 'vitamin_daemon':
+                renderer.drawSprite('vitamin_daemon', this.x, this.y, 0.84); // 0.7 * 1.2 = 0.84 (216px)
                 break;
-            case 'mineral_demon':
-                renderer.drawSprite('mineral_demon', this.x, this.y, 0.7); // 180px / 256px = 0.7
+            case 'mineral_daemon':
+                renderer.drawSprite('mineral_daemon', this.x, this.y, 0.84); // 0.7 * 1.2 = 0.84 (216px)
                 break;
             case 'vitamin_angel':
-                renderer.drawSprite('vitamin_angel', this.x, this.y, 0.7); // 180px / 256px = 0.7
+                renderer.drawSprite('vitamin_angel', this.x, this.y, 0.84); // 0.7 * 1.2 = 0.84 (216px)
+                break;
+            case 'vise_omega':
+                // ヴァイスオメガ - PNG画像または仮描画
+                if (renderer.drawSprite) {
+                    renderer.drawSprite('vise_omega', this.x, this.y, 0.9375); // 0.78125 * 1.2 = 0.9375 (240px)
+                } else {
+                    // 仮のプレースホルダー描画（合体形態のイメージ）
+                    renderer.ctx.save();
+                    renderer.ctx.globalAlpha = 0.9;
+
+                    // 虹色グロー効果
+                    const gradient = renderer.ctx.createRadialGradient(
+                        this.x + this.width / 2, this.y + this.height / 2, 0,
+                        this.x + this.width / 2, this.y + this.height / 2, this.width
+                    );
+                    gradient.addColorStop(0, this.glowColor);
+                    gradient.addColorStop(0.5, this.color);
+                    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+                    renderer.ctx.fillStyle = gradient;
+                    renderer.ctx.fillRect(this.x - 20, this.y - 20, this.width + 40, this.height + 40);
+
+                    // メインボディ（合体形態）
+                    renderer.ctx.fillStyle = this.color;
+                    renderer.ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                    // アクセントカラー（二重枠）
+                    renderer.ctx.strokeStyle = this.accentColor;
+                    renderer.ctx.lineWidth = 4;
+                    renderer.ctx.strokeRect(this.x + 10, this.y + 10, this.width - 20, this.height - 20);
+
+                    renderer.ctx.strokeStyle = this.secondaryColor;
+                    renderer.ctx.lineWidth = 2;
+                    renderer.ctx.strokeRect(this.x + 20, this.y + 20, this.width - 40, this.height - 40);
+
+                    renderer.ctx.restore();
+                }
                 break;
             default:
                 // フォールバック（従来の描画）
@@ -847,6 +1013,11 @@ export class BossFactory {
      * @param {number} bossIndex - ボスインデックス（0-2）
      * @returns {Boss} ボスオブジェクト
      */
+    /**
+     * ボス生成
+     * @param {number} bossIndex - ボスインデックス（0-2）
+     * @returns {Boss} ボスオブジェクト
+     */
     static createBoss(bossIndex) {
         const config = BOSS_CONFIG.TYPES[bossIndex];
         if (!config) {
@@ -868,22 +1039,28 @@ export class BossFactory {
             bossIndex: bossIndex
         };
         
-        // ボスタイプ設定
+        // ボスタイプ設定（drawMain()のcase文と一致させる）
         switch (bossIndex) {
             case 0:
-                bossOptions.type = 'medusa';
+                bossOptions.type = 'vitamin_daemon';
                 if (config.spriteScale) {
                     bossOptions.spriteScale = config.spriteScale;
                 }
                 break;
             case 1:
-                bossOptions.type = 'flame_demon_lord';
+                bossOptions.type = 'mineral_daemon';
                 break;
             case 2:
-                bossOptions.type = 'ice_demon_lord';
+                bossOptions.type = 'vitamin_angel';
+                break;
+            case 3:
+                bossOptions.type = 'vise_omega';
+                if (config.spriteScale) {
+                    bossOptions.spriteScale = config.spriteScale;
+                }
                 break;
         }
-        
+
         return new Boss(bossOptions);
     }
 }

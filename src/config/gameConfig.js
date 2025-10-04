@@ -149,8 +149,8 @@ export const BOSS_CONFIG = {
             name: 'ビタミンエンジェル',
             width: 180,
             height: 180,
-            hp: 20000, // Stage 3 boss - 300% increase for final boss difficulty
-            bulletDamage: 45, // Tripled damage for ultimate challenge
+            hp: 20000, // Final Stage boss - 最終ボス
+            bulletDamage: 45, // 最終ボスのダメージ
             color: '#FFD700', // ゴールド
             secondaryColor: '#FF69B4', // ピンク
             accentColor: '#87CEEB', // スカイブルー

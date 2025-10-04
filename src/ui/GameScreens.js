@@ -29,7 +29,7 @@ export class GameScreens {
             },
             bossMode: {
                 selectedIndex: 0,
-                options: ['ビタミンデーモン (Stage 1)', 'ミネラルデーモン (Stage 2)', '氷結の魔王 (Stage 3)', 'Back'],
+                options: ['ビタミンデーモン (Stage 1)', 'ミネラルデーモン (Stage 2)', 'ビタミンエンジェル (Stage 3)', 'Back'],
                 cursorPosition: 0,
                 inputDelay: 0
             },
@@ -111,11 +111,11 @@ export class GameScreens {
                 characterIndex: 0,
                 typewriterSpeed: 4, // Doubled speed for faster typing
                 dialogues: [
-                    { speaker: 'ポポロン', text: 'アフロディーテ！三人の魔王を倒したぞ！' },
-                    { speaker: 'アフロディーテ', text: '我が勇敢なるポポロン...よく来てくれました！' },
+                    { speaker: 'ポポロン', text: 'ブロッコリー姫！魔王たちを倒したぞ！' },
+                    { speaker: 'ブロッコリー姫', text: '我が勇敢なるポポロン...よく来てくれました！' },
                     { speaker: 'ポポロン', text: '愛する君を救うためなら、何物も俺を止められない' },
-                    { speaker: 'アフロディーテ', text: '一緒にこの大地に平和を取り戻しましょう！' },
-                    { speaker: 'ナレーター', text: 'かくして勇者ポポロンは姫君アフロディーテを救い出した...' },
+                    { speaker: 'ブロッコリー姫', text: '一緒にこの大地に平和を取り戻しましょう！' },
+                    { speaker: 'ナレーター', text: 'かくして勇者ポポロンはブロッコリー姫を救い出した...' },
                     { speaker: 'ナレーター', text: '魔城は崩れ去り、光が再び大地に戻った' },
                     { speaker: 'ナレーター', text: '二人の愛は全ての悪を打ち破り、永遠の幸せを手に入れた' },
                     { speaker: 'ナレーター', text: 'ありがとう ポポロン！' }
@@ -425,7 +425,7 @@ export class GameScreens {
                 switch (state.selectedIndex) {
                     case 0: return { action: 'start_boss_battle', bossIndex: 0 }; // ビタミンデーモン
                     case 1: return { action: 'start_boss_battle', bossIndex: 1 }; // ミネラルデーモン
-                    case 2: return { action: 'start_boss_battle', bossIndex: 2 }; // 氷結の魔王
+                    case 2: return { action: 'start_boss_battle', bossIndex: 2 }; // ビタミンエンジェル (Final Stage)
                     case 3: return 'menu'; // Back
                 }
             }
@@ -847,21 +847,20 @@ export class GameScreens {
         // コピーライト表示
         renderer.ctx.font = '20px "Courier New", monospace';
         renderer.ctx.fillStyle = '#FFFFFF';
-        renderer.ctx.fillText('©NAMIKO 1986', centerX, centerY - 10);
+        renderer.ctx.fillText('©OMEGA 1986', centerX, centerY - 10);
         
         // 点滅する操作案内
         const blinkAlpha = Math.sin(Date.now() * 0.008) * 0.5 + 0.5;
         renderer.ctx.font = '24px "Courier New", monospace';
         renderer.ctx.fillStyle = `rgba(255, 255, 255, ${blinkAlpha})`;
         renderer.ctx.fillText('PUSH SPACE KEY', centerX, centerY + 60);
-        
-        // バージョン情報（小さく右下）
+
+        // バージョン情報（右下）
         renderer.ctx.font = '12px "Courier New", monospace';
         renderer.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         renderer.ctx.textAlign = 'right';
-        renderer.ctx.fillText('v1.0.0', GAME_CONFIG.CANVAS_WIDTH - 10, GAME_CONFIG.CANVAS_HEIGHT - 10);
-        
-        renderer.ctx.textAlign = 'start';
+        renderer.ctx.fillText('v0.2.0', GAME_CONFIG.CANVAS_WIDTH - 10, GAME_CONFIG.CANVAS_HEIGHT - 10);
+        renderer.ctx.textAlign = 'center';
     }
 
     /**
@@ -1158,22 +1157,22 @@ export class GameScreens {
         // Draw celebration effects first (background layer)
         this.drawCelebrationEffects(renderer, state);
 
-        // Draw Popolon sprite
+        // Draw Popolon sprite (PNG version) - 1.5x size
         if (renderer.drawSprite) {
-            renderer.drawSprite('popolon', state.popolonX, state.popolonY, 3);
+            renderer.drawSprite('popolon_png', state.popolonX, state.popolonY, 0.375); // 256px -> 96px (1.5x)
         } else {
             // Fallback rectangle
             renderer.ctx.fillStyle = '#4169E1';
-            renderer.ctx.fillRect(state.popolonX, state.popolonY, 48, 48);
+            renderer.ctx.fillRect(state.popolonX, state.popolonY, 96, 96);
         }
 
-        // Draw Aphrodite sprite
+        // Draw Broccoli Princess sprite (PNG version) - 1.5x size
         if (renderer.drawSprite) {
-            renderer.drawSprite('aphrodite', state.aphroditeX, state.aphroditeY, 3);
+            renderer.drawSprite('broccoli_princess_png', state.aphroditeX, state.aphroditeY, 0.375); // 256px -> 96px (1.5x)
         } else {
             // Fallback rectangle
-            renderer.ctx.fillStyle = '#FF69B4';
-            renderer.ctx.fillRect(state.aphroditeX, state.aphroditeY, 48, 48);
+            renderer.ctx.fillStyle = '#90EE90';
+            renderer.ctx.fillRect(state.aphroditeX, state.aphroditeY, 96, 96);
         }
 
         // Draw dialogue box if in dialogue phase
