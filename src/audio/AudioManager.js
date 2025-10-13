@@ -9,10 +9,10 @@ export class AudioManager {
     constructor() {
         this.isInitialized = false;
         this.isMuted = false;
-        this.isDisabled = true; // 音響システム完全無効化
-        this.masterVolume = 0;
-        this.bgmVolume = 0;
-        this.sfxVolume = 0;
+        this.isDisabled = false; // 音響システム有効化
+        this.masterVolume = 0.3;
+        this.bgmVolume = 0.4;
+        this.sfxVolume = 0.15; // SE音量を適度に（15%）
         
         // オーディオコンテキスト状態
         this.audioContextState = 'suspended';
@@ -97,12 +97,55 @@ export class AudioManager {
     }
 
     /**
-     * ユーザーインタラクション後の初期化（緊急修正版）
+     * ユーザーインタラクション後の初期化
      * @returns {Promise<boolean>} 初期化成功フラグ
      */
     async initializeAfterUserInteraction() {
-        console.log('🚫 AudioManager: User interaction initialization disabled');
-        return false;
+        try {
+            console.log('🎵 AudioManager: Starting user interaction initialization...');
+
+            if (this.isDisabled) {
+                console.log('🚫 AudioManager: Audio system is disabled');
+                return false;
+            }
+
+            if (!Tone) {
+                console.warn('AudioManager: Tone.js not available');
+                return false;
+            }
+
+            // AudioContextを起動
+            if (Tone.context.state !== 'running') {
+                await Tone.start();
+                console.log('✅ AudioManager: AudioContext started');
+            }
+
+            // BGMPlayerを作成
+            if (!this.bgmPlayer) {
+                const { BGMPlayer } = await import('./BGMPlayer.js');
+                this.bgmPlayer = new BGMPlayer();
+                if (this.bgmGain) {
+                    this.bgmPlayer.output = this.bgmGain;
+                }
+                console.log('✅ AudioManager: BGMPlayer created');
+            }
+
+            // SoundEffectsを作成
+            if (this.sfxPlayers.size === 0) {
+                const { SoundEffects } = await import('./SoundEffects.js');
+                const sfx = new SoundEffects(this.sfxGain);
+                this.sfxPlayers.set('main', sfx);
+                console.log('✅ AudioManager: SoundEffects created');
+            }
+
+            this.isInitialized = true;
+            console.log('✅ AudioManager: User interaction initialization complete');
+            return true;
+
+        } catch (error) {
+            console.error('❌ AudioManager: User interaction initialization failed:', error);
+            return false;
+        }
     }
 
     /**
@@ -311,13 +354,28 @@ export class AudioManager {
     }
 
     /**
-     * BGM再生（無効化版）
+     * BGM再生
      * @param {string} trackName - トラック名
      * @param {boolean} loop - ループ再生フラグ
      */
     playBGM(trackName, loop = true) {
-        console.log(`🚫 AudioManager: BGM "${trackName}" not played (system disabled)`);
-        return;
+        try {
+            console.log(`🎵 AudioManager: Playing BGM "${trackName}"`);
+
+            if (this.isDisabled) {
+                console.warn(`AudioManager: Cannot play BGM ${trackName} - system disabled`);
+                return;
+            }
+
+            if (!this.bgmPlayer) {
+                console.warn(`AudioManager: BGM player not initialized`);
+                return;
+            }
+
+            this.bgmPlayer.play(trackName, loop);
+        } catch (error) {
+            console.warn(`AudioManager: Failed to play BGM ${trackName}:`, error.message || error);
+        }
     }
 
     /**

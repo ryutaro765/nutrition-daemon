@@ -9,8 +9,8 @@ export class BossIntroDisplay {
         this.isVisible = false;
         this.currentBoss = 0;
         this.displayTimer = 0;
-        this.maxDisplayTime = 300; // 5秒間表示 (60fps * 5)
-        
+        this.maxDisplayTime = 180; // 3秒間表示 (60fps * 3)
+
         // 表示フェーズ
         this.phases = {
             FADE_IN: 0,
@@ -18,11 +18,11 @@ export class BossIntroDisplay {
             FADE_OUT: 2,
             HIDDEN: 3
         };
-        
+
         this.currentPhase = this.phases.HIDDEN;
-        this.fadeInDuration = 60;  // 1秒間フェードイン
-        this.holdDuration = 180;   // 3秒間表示
-        this.fadeOutDuration = 60; // 1秒間フェードアウト
+        this.fadeInDuration = 30;  // 0.5秒間フェードイン
+        this.holdDuration = 120;   // 2秒間表示（ボスBGMを聞かせる）
+        this.fadeOutDuration = 30; // 0.5秒間フェードアウト
         
         this.alpha = 0;
         this.titleAlpha = 0;
@@ -62,6 +62,17 @@ export class BossIntroDisplay {
                 titleColor: "#FF69B4",
                 subtitleColor: "#87CEEB",
                 warningText: "天使降臨！"
+            },
+            {
+                id: 3,
+                title: "最終魔王",
+                name: "ヴァイスオメガ",
+                subtitle: "Vise Omega, The Ultimate Demon",
+                description: "二つの魔王が融合した究極の存在。すべてを支配する絶対的な力",
+                color: "#8B0000",
+                titleColor: "#FF0000",
+                subtitleColor: "#FF69B4",
+                warningText: "最終決戦！"
             }
         ];
         
@@ -210,15 +221,16 @@ export class BossIntroDisplay {
     /**
      * 描画処理
      * @param {Object} renderer - レンダラー
+     * @param {Object} bossEntity - ボスエンティティ（オプション）
      */
-    render(renderer) {
+    render(renderer, bossEntity = null) {
         if (!this.isVisible || this.alpha <= 0) return;
 
         const ctx = renderer.ctx;
         const canvas = renderer.canvas;
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        
+
         const boss = this.bossInfo[this.currentBoss];
         
         // 背景オーバーレイ（より濃い）
@@ -233,66 +245,110 @@ export class BossIntroDisplay {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         ctx.save();
-        
-        // 警告テキスト（上部に点滅）
-        if (this.titleAlpha > 0) {
-            ctx.font = 'bold 32px "Courier New", monospace';
-            ctx.fillStyle = `rgba(255, 50, 50, ${this.warningPulse * this.titleAlpha})`;
-            ctx.textAlign = 'center';
-            ctx.fillText(boss.warningText, centerX, centerY - 120 + this.titleOffset);
+
+        // ボスのスプライト表示（画面中央に大きく）
+        if (bossEntity && this.titleAlpha > 0.3) {
+            ctx.save();
+            ctx.globalAlpha = this.titleAlpha;
+
+            // ボスを画面中央上部に配置（テキストの邪魔にならないように）
+            const bossDisplayScale = 3.0; // 通常の3倍の大きさ
+            const bossDisplayX = centerX;
+            const bossDisplayY = centerY - 180; // 中央より上に配置
+
+            ctx.translate(bossDisplayX, bossDisplayY);
+
+            // ボススプライトの描画
+            if (bossEntity.sprite) {
+                // スプライトがある場合は描画
+                const spriteWidth = bossEntity.width * bossDisplayScale;
+                const spriteHeight = bossEntity.height * bossDisplayScale;
+
+                // グロー効果
+                ctx.shadowColor = boss.titleColor;
+                ctx.shadowBlur = 20 * this.glowIntensity;
+
+                // スプライトを中央に配置
+                if (bossEntity.render) {
+                    ctx.save();
+                    ctx.scale(bossDisplayScale, bossDisplayScale);
+                    ctx.translate(-bossEntity.width / 2, -bossEntity.height / 2);
+                    bossEntity.render(renderer);
+                    ctx.restore();
+                } else {
+                    // 簡易的な矩形表示
+                    ctx.fillStyle = boss.color;
+                    ctx.fillRect(-spriteWidth / 2, -spriteHeight / 2, spriteWidth, spriteHeight);
+                }
+
+                ctx.shadowBlur = 0;
+            }
+
+            ctx.restore();
         }
-        
-        // ボス称号（中央上部）
+
+        // テキスト表示位置を調整（ボススプライトの下に配置）
+        const textOffsetY = bossEntity ? 80 : 0; // ボスがいる場合はテキストを下にずらす
+
+        // ボス称号（中央）
         if (this.titleAlpha > 0) {
             ctx.font = 'bold 28px "Courier New", monospace';
             ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * this.titleAlpha})`;
             ctx.textAlign = 'center';
-            ctx.fillText(boss.title, centerX, centerY - 60 + this.titleOffset);
+            ctx.fillText(boss.title, centerX, centerY + textOffsetY - 60 + this.titleOffset);
         }
-        
+
         // メインタイトル（ボス名・大きく中央に）
         if (this.titleAlpha > 0) {
             // グロー効果
             ctx.shadowColor = boss.titleColor;
             ctx.shadowBlur = 25 * this.glowIntensity * this.titleAlpha;
-            
+
             ctx.font = 'bold 56px "Courier New", monospace';
             ctx.fillStyle = `rgba(${this.hexToRgb(boss.titleColor)}, ${this.titleAlpha})`;
             ctx.textAlign = 'center';
-            ctx.fillText(boss.name, centerX, centerY + this.titleOffset);
-            
+            ctx.fillText(boss.name, centerX, centerY + textOffsetY + this.titleOffset);
+
             // 影効果
             ctx.shadowBlur = 0;
             ctx.fillStyle = `rgba(0, 0, 0, ${0.7 * this.titleAlpha})`;
-            ctx.fillText(boss.name, centerX + 3, centerY + 3 + this.titleOffset);
-            
+            ctx.fillText(boss.name, centerX + 3, centerY + textOffsetY + 3 + this.titleOffset);
+
             // メインテキスト再描画
             ctx.fillStyle = `rgba(${this.hexToRgb(boss.titleColor)}, ${this.titleAlpha})`;
-            ctx.fillText(boss.name, centerX, centerY + this.titleOffset);
+            ctx.fillText(boss.name, centerX, centerY + textOffsetY + this.titleOffset);
         }
-        
+
         // サブタイトル（英語名）
         if (this.subtitleAlpha > 0) {
             ctx.font = 'italic 22px "Courier New", monospace';
             ctx.fillStyle = `rgba(${this.hexToRgb(boss.subtitleColor)}, ${0.9 * this.subtitleAlpha})`;
             ctx.textAlign = 'center';
-            ctx.fillText(boss.subtitle, centerX, centerY + 50);
+            ctx.fillText(boss.subtitle, centerX, centerY + textOffsetY + 50);
         }
-        
+
         // 説明文
         if (this.subtitleAlpha > 0.5) {
             ctx.font = '16px "Courier New", monospace';
             ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * this.subtitleAlpha})`;
             ctx.textAlign = 'center';
-            ctx.fillText(boss.description, centerX, centerY + 90);
+            ctx.fillText(boss.description, centerX, centerY + textOffsetY + 90);
         }
-        
+
         // 準備指示（下部）
         if (this.subtitleAlpha > 0.7) {
             ctx.font = 'bold 20px "Courier New", monospace';
             ctx.fillStyle = `rgba(255, 215, 0, ${this.warningPulse * this.subtitleAlpha})`;
             ctx.textAlign = 'center';
-            ctx.fillText('戦闘準備せよ！', centerX, centerY + 130);
+            ctx.fillText('戦闘準備せよ！', centerX, centerY + textOffsetY + 130);
+        }
+
+        // 警告テキスト（最上部に点滅）
+        if (this.titleAlpha > 0) {
+            ctx.font = 'bold 32px "Courier New", monospace';
+            ctx.fillStyle = `rgba(255, 50, 50, ${this.warningPulse * this.titleAlpha})`;
+            ctx.textAlign = 'center';
+            ctx.fillText(boss.warningText, centerX, 80);
         }
         
         ctx.restore();

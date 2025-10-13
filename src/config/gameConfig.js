@@ -8,7 +8,7 @@ export const GAME_CONFIG = {
     PLAYER: {
         WIDTH: 36,
         HEIGHT: 36,
-        SPEED: 2.0, // 2.5 -> 2.0 (より歩いている感を出すため速度を下げる)
+        SPEED: 1.7, // 2.0 -> 1.7 (さらにゆっくり歩くように)
         SPEED_MULTIPLIER_HIGH: 2.5, // 高速モード時の倍率
         INITIAL_HP: 100, // HPを増量（60→100）でより優しく
         INITIAL_X: 400, // canvas.width / 2
@@ -22,7 +22,7 @@ export const GAME_CONFIG = {
         ENEMY_SPAWN_RATE: 0.008,
         POWER_UP_SPAWN_RATE: 0.005,
         BOSS_SPAWN_DISTANCE: 1000, // テスト用に短縮 (1000 / 0.1 = 166秒)
-        CONTINUE_LIMIT: 5,
+        CONTINUE_LIMIT: 10, // 5 → 10 (コンティニュー回数増加)
         CONTINUE_TIME: 600, // 10秒 (60fps * 10)
         SPEED_MODE_DURATION: 300, // 5秒 (60fps * 5)
         LASER_AMMO_INITIAL: 10
@@ -149,12 +149,24 @@ export const BOSS_CONFIG = {
             name: 'ビタミンエンジェル',
             width: 180,
             height: 180,
-            hp: 20000, // Final Stage boss - 最終ボス
-            bulletDamage: 45, // 最終ボスのダメージ
+            hp: 20000, // Stage 3 boss
+            bulletDamage: 45,
             color: '#FFD700', // ゴールド
             secondaryColor: '#FF69B4', // ピンク
             accentColor: '#87CEEB', // スカイブルー
             glowColor: '#FFFFFF' // 白い光
+        },
+        {
+            name: 'ヴァイスオメガ',
+            width: 234, // 他のボスより1.3倍大きい (180 * 1.3 = 234)
+            height: 234,
+            hp: 50000, // True Final Boss - 最強
+            bulletDamage: 60, // 最高ダメージ
+            color: '#FF1493', // ディープピンク
+            secondaryColor: '#FFD700', // ゴールド
+            accentColor: '#9400D3', // ダークバイオレット
+            glowColor: '#FF69B4', // ホットピンク
+            spriteScale: 1.09 // 約280px表示 (256 * 1.09 = 279px)
         }
     ]
 };
@@ -165,7 +177,7 @@ export const ENEMY_CONFIG = {
         width: 43,
         height: 43,
         hp: 20,
-        speed: 1.2, // 2.5 → 1.2 (さらに52%減)
+        speed: 0.9, // 1.2 → 0.9 (さらにゆっくり)
         color: '#333333'
     },
     SINE_FLYER: {

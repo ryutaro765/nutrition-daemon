@@ -354,15 +354,52 @@ export class Player {
         const drawX = this.x + this.headOffset;
         const drawY = this.y - this.bodyOffset;
         
-        // スピードモード時は赤い光のオーラエフェクト（キャラの外側）
-        if (gameState.isSpeedMode) {
+        // 無敵モード時は虹色のオーラエフェクト
+        if (gameState.isInvincible) {
             const ctx = renderer.ctx;
             ctx.save();
-            
+
+            // 虹色グロー（回転する虹色）
+            const time = Date.now() / 1000;
+            const hue = (time * 180) % 360; // 虹色を回転
+            const pulseScale = 1 + Math.sin(time * 5) * 0.3;
+            const glowSize = 60 * pulseScale;
+
+            const gradient = ctx.createRadialGradient(
+                drawX + 43, drawY + 43, 0,
+                drawX + 43, drawY + 43, glowSize
+            );
+            gradient.addColorStop(0, `hsla(${hue}, 100%, 50%, 0.8)`);
+            gradient.addColorStop(0.3, `hsla(${(hue + 60) % 360}, 100%, 50%, 0.5)`);
+            gradient.addColorStop(0.6, `hsla(${(hue + 120) % 360}, 100%, 50%, 0.3)`);
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(drawX - 40, drawY - 40, 166, 166);
+
+            // キラキラエフェクト
+            for (let i = 0; i < 8; i++) {
+                const angle = (time * 2 + i * Math.PI / 4) % (Math.PI * 2);
+                const radius = 50 + Math.sin(time * 3 + i) * 10;
+                const sparkX = drawX + 43 + Math.cos(angle) * radius;
+                const sparkY = drawY + 43 + Math.sin(angle) * radius;
+                const sparkSize = 3 + Math.sin(time * 5 + i) * 2;
+
+                ctx.fillStyle = `hsla(${(hue + i * 45) % 360}, 100%, 70%, 0.8)`;
+                ctx.fillRect(sparkX - sparkSize/2, sparkY - sparkSize/2, sparkSize, sparkSize);
+            }
+
+            ctx.restore();
+        }
+        // スピードモード時は赤い光のオーラエフェクト（キャラの外側）
+        else if (gameState.isSpeedMode) {
+            const ctx = renderer.ctx;
+            ctx.save();
+
             // 外側の赤いグロー（パルス効果）
             const pulseScale = 1 + Math.sin(Date.now() / 100) * 0.2;
             const glowSize = 50 * pulseScale;
-            
+
             const gradient = ctx.createRadialGradient(
                 drawX + 43, drawY + 43, 0,
                 drawX + 43, drawY + 43, glowSize
@@ -370,17 +407,17 @@ export class Player {
             gradient.addColorStop(0, 'rgba(255, 0, 0, 0.6)');
             gradient.addColorStop(0.5, 'rgba(255, 0, 0, 0.3)');
             gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
-            
+
             ctx.fillStyle = gradient;
             ctx.fillRect(drawX - 30, drawY - 30, 146, 146);
-            
+
             // 残像エフェクト（3つの軌跡）
             for (let i = 1; i <= 3; i++) {
                 const alpha = 0.2 - (i * 0.05);
                 ctx.globalAlpha = alpha;
                 renderer.drawSprite(spriteKey, drawX + (i * 3), drawY, 0.336);
             }
-            
+
             ctx.restore();
         }
         

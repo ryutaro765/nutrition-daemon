@@ -139,6 +139,50 @@ export const SPRITE_DATA = {
         height: 64
     },
 
+    // High-quality enemy sprites (PNG format -> scaled in game)
+    energy_drink_bat_png: {
+        type: 'image',
+        src: '/sprites/enemies/energy_drink_bat.png',
+        width: 256,
+        height: 256
+    },
+
+    egg_knight_png: {
+        type: 'image',
+        src: '/sprites/enemies/egg_knight.png',
+        width: 256,
+        height: 256
+    },
+
+    broccoli_warrior_png: {
+        type: 'image',
+        src: '/sprites/enemies/roccoli_warrior.png',
+        width: 256,
+        height: 256
+    },
+
+    banana_boy_png: {
+        type: 'image',
+        src: '/sprites/enemies/banana_boy.png',
+        width: 256,
+        height: 256
+    },
+
+    donut_boy_png: {
+        type: 'image',
+        src: '/sprites/enemies/donut_boy.png',
+        width: 256,
+        height: 256
+    },
+
+    garlic_warrior_png: {
+        type: 'image',
+        src: '/sprites/enemies/garlic_warrior.png',
+        width: 256,
+        height: 256
+    },
+
+
     // Traditional pixel array sprite for Popolon (MSX魔城伝説風の青い鎧戦士・後ろ姿・角付きヘルメット）
     popolon: [
         [0,0,0,0,4,4,4,4,4,4,4,4,0,0,0,0],

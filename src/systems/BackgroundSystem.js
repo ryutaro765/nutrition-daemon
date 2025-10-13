@@ -1597,8 +1597,8 @@ export class BackgroundSystem {
             if (box.shouldRemove) continue;
             
             const blinkFactor = Math.sin(box.blinkTimer) * 0.3 + 0.7;
-            
-            // ？ボックス本体（5倍スケール - より大きく見やすく）
+
+            // ？ボックス本体（ドット絵: 16px * 5.0 = 80px）
             renderer.drawSprite('questionBox', box.x, box.y, 5.0);
             
             // ダメージによる点滅エフェクト（より控えめに）

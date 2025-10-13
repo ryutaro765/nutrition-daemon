@@ -55,8 +55,28 @@ export class UIManager {
             xlarge: '36px "Courier New", monospace',
             title: 'bold 48px "Courier New", monospace'
         };
-        
+
+        // 栄養ボール画像の読み込み
+        this.nutritionBallImages = {
+            carbohydrate: this.loadImage('/carbohydrate_ball.png'),
+            protein: this.loadImage('/protein_ball.png'),
+            fat: this.loadImage('/fat_ball.png'),
+            vitamin: this.loadImage('/vitamin_ball.png'),
+            mineral: this.loadImage('/mineral_ball.png')
+        };
+
         this.initializeUI();
+    }
+
+    /**
+     * 画像読み込みヘルパー
+     * @param {string} src - 画像パス
+     * @returns {Image} 画像オブジェクト
+     */
+    loadImage(src) {
+        const img = new Image();
+        img.src = src;
+        return img;
     }
 
     /**
@@ -247,10 +267,13 @@ export class UIManager {
             this.drawWeaponInfo(renderer, padding, yOffset, weaponState);
             yOffset += lineHeight;
         }
-        
+
+        // 栄養素収集状況表示（右上に配置）
+        this.drawNutritionCollection(renderer, gameState);
+
         // オーディオ状態表示
         this.drawAudioStatus(renderer, gameState);
-        
+
         // 追加情報表示
         this.drawAdditionalInfo(renderer, padding, yOffset, gameState, weaponState);
     }
@@ -360,6 +383,97 @@ export class UIManager {
         if (weaponState.laserAmmo > 0) {
             renderer.ctx.fillStyle = this.colors.info;
             renderer.ctx.fillText(`LASER: ${weaponState.laserAmmo}`, x + 250, y);
+        }
+    }
+
+    /**
+     * 栄養素収集状況描画（右上）
+     * @param {Object} renderer - レンダラー
+     * @param {Object} gameState - ゲーム状態
+     */
+    drawNutritionCollection(renderer, gameState) {
+        // 右上に配置
+        const rightMargin = 20;
+        const topMargin = 120; // オーディオ状態の下に配置
+
+        // 栄養素の定義（順序: 炭水化物、タンパク質、脂質、ビタミン、ミネラル）
+        const nutrients = [
+            { type: 'carbohydrate', name: '炭水化物' },
+            { type: 'protein', name: 'タンパク質' },
+            { type: 'fat', name: '脂質' },
+            { type: 'vitamin', name: 'ビタミン' },
+            { type: 'mineral', name: 'ミネラル' }
+        ];
+
+        const iconSize = 20; // 小さめサイズ
+        const iconSpacing = 25; // 間隔も狭く
+        const totalWidth = nutrients.length * iconSpacing;
+        const startX = renderer.canvas.width - rightMargin - totalWidth;
+        const iconY = topMargin;
+
+        // 各栄養素アイコンを描画
+        nutrients.forEach((nutrient, index) => {
+            const iconX = startX + index * iconSpacing;
+            const isCollected = gameState.collectedNutrients[nutrient.type];
+            const img = this.nutritionBallImages[nutrient.type];
+
+            // 画像が読み込まれている場合は画像を表示
+            if (img && img.complete && img.naturalHeight !== 0) {
+                renderer.ctx.save();
+
+                if (isCollected) {
+                    // 収集済み：明るく + 強いグロー効果
+                    const glowIntensity = Math.sin(Date.now() * 0.005 + index) * 0.5 + 0.5;
+                    renderer.ctx.shadowColor = '#FFFF00';
+                    renderer.ctx.shadowBlur = 15 * glowIntensity;
+                    renderer.ctx.globalAlpha = 1.0;
+
+                    // 背景に白い円を追加（コントラスト強化）
+                    renderer.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    renderer.ctx.beginPath();
+                    renderer.ctx.arc(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2 + 2, 0, Math.PI * 2);
+                    renderer.ctx.fill();
+                } else {
+                    // 未収集：非常に暗く
+                    renderer.ctx.globalAlpha = 0.15;
+                    renderer.ctx.filter = 'grayscale(100%) brightness(0.5)';
+                }
+
+                // 画像を描画（小さく）
+                renderer.ctx.drawImage(
+                    img,
+                    iconX,
+                    iconY,
+                    iconSize,
+                    iconSize
+                );
+
+                renderer.ctx.restore();
+            } else {
+                // 画像が読み込まれていない場合はフォールバック（円）
+                renderer.ctx.beginPath();
+                renderer.ctx.arc(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
+
+                if (isCollected) {
+                    renderer.ctx.fillStyle = '#FFD700';
+                    renderer.ctx.fill();
+                } else {
+                    renderer.ctx.strokeStyle = '#888888';
+                    renderer.ctx.lineWidth = 2;
+                    renderer.ctx.stroke();
+                }
+            }
+        });
+
+        // 🌟 無敵モード中の残り時間表示
+        if (gameState.isInvincible && gameState.invincibleTimer > 0) {
+            const secondsLeft = Math.ceil(gameState.invincibleTimer / 60);
+            const blinkAlpha = Math.sin(Date.now() * 0.01) * 0.3 + 0.7;
+            renderer.ctx.font = 'bold 14px "Courier New", monospace';
+            renderer.ctx.fillStyle = `rgba(255, 215, 0, ${blinkAlpha})`;
+            renderer.ctx.textAlign = 'right';
+            renderer.ctx.fillText(`✨ 無敵: ${secondsLeft}秒`, renderer.canvas.width - rightMargin, iconY + 50);
+            renderer.ctx.textAlign = 'start';
         }
     }
 

@@ -101,6 +101,9 @@ export class Boss {
                 case 2:
                     this.type = 'vitamin_angel';
                     break;
+                case 3:
+                    this.type = 'vise_omega';
+                    break;
                 default:
                     this.type = 'vitamin_daemon';
             }
@@ -877,9 +880,9 @@ export class Boss {
                 renderer.drawSprite('vitamin_angel', this.x, this.y, 0.84); // 0.7 * 1.2 = 0.84 (216px)
                 break;
             case 'vise_omega':
-                // ヴァイスオメガ - PNG画像または仮描画
+                // ヴァイスオメガ - 最終ボスなので他より大きい（1.3倍）
                 if (renderer.drawSprite) {
-                    renderer.drawSprite('vise_omega', this.x, this.y, 0.9375); // 0.78125 * 1.2 = 0.9375 (240px)
+                    renderer.drawSprite('vise_omega', this.x, this.y, 1.09); // 0.84 * 1.3 = 1.092 (約280px)
                 } else {
                     // 仮のプレースホルダー描画（合体形態のイメージ）
                     renderer.ctx.save();

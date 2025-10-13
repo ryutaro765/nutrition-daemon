@@ -15,6 +15,23 @@ export class SoundEffects {
         this.lastErrorTime = 0; // 最後のエラー時刻
         this.contextCheckInterval = null; // コンテキスト状態チェックインターバル
         
+        // 🎵 MP3サウンドエフェクト (優先的に使用)
+        this.mp3Sounds = {
+            explosion: new Audio('/audio/se/explosion.mp3'),
+            muteki: new Audio('/audio/se/muteki.mp3'),
+            boss_death: new Audio('/audio/se/boss_death.mp3'),
+            item_get: new Audio('/audio/se/item_get.mp3'),
+            enemy_death: new Audio('/audio/se/enemy_death.mp3'),
+            boss_hit: new Audio('/audio/se/boss_hit.mp3'),
+            question_box_hit: new Audio('/audio/se/question_box_hit.mp3'),
+            spark_attack: new Audio('/audio/se/spark_attack.mp3')
+        };
+        
+        // MP3音量設定 (BGMより小さく)
+        Object.values(this.mp3Sounds).forEach(audio => {
+            audio.volume = 0.3;
+        });
+        
         // Tone.jsが利用可能な場合のみ初期化
         if (!Tone) {
             console.warn('SoundEffects: Tone.js not available, audio disabled');
@@ -23,8 +40,8 @@ export class SoundEffects {
         }
         
         try {
-            // 出力ノード
-            this.output = new Tone.Gain(1);
+            // 出力ノード（SE音量を0.05に設定 = 5%）
+            this.output = new Tone.Gain(0.05);
         
         // 効果音用シンセサイザー
         this.synths = {
@@ -490,6 +507,34 @@ export class SoundEffects {
         try {
             console.log(`🔊 SoundEffects: Simple play attempt for "${soundName}"`);
             
+            // 🎵 MP3サウンドマッピング（優先使用）
+            const mp3Map = {
+                'explosion': 'explosion',
+                'bossDeath': 'boss_death',
+                'enemyDeath': 'enemy_death',
+                'bossHit': 'enemy_death',  // ボス着弾音
+                'powerUp': 'item_get',
+                'itemGet': 'item_get',
+                'questionBoxHit': 'question_box_hit',
+                'muteki': 'muteki',
+                'sparkAttack': 'spark_attack',
+                'hit': 'enemy_death'  // 敵着弾音
+            };
+
+            // MP3が存在する場合は再生
+            if (mp3Map[soundName] && this.mp3Sounds && this.mp3Sounds[mp3Map[soundName]]) {
+                try {
+                    const audio = this.mp3Sounds[mp3Map[soundName]];
+                    audio.currentTime = 0;
+                    audio.play().catch(e => console.warn('MP3 playback failed:', e));
+                    console.log(`✅ Playing MP3: ${mp3Map[soundName]}`);
+                    return; // MP3再生成功したらTone.jsはスキップ
+                } catch (error) {
+                    console.warn('MP3 playback error, falling back to Tone.js:', error);
+                }
+            }
+            
+            // MP3がない場合はTone.jsで再生（フォールバック）
             if (this.isDisabled || !Tone) {
                 console.warn('SoundEffects: Cannot play - audio disabled');
                 return;
@@ -512,16 +557,21 @@ export class SoundEffects {
         if (!Tone || this.isDisabled) return;
         
         try {
-            // 超シンプルな効果音マッピング
+            // 任天堂風の気持ちいい効果音マッピング
             const soundMap = {
-                'shoot': () => this.playSimpleTone('C5', '8n'),
-                'hit': () => this.playSimpleTone('C3', '16n'),
-                'enemyDeath': () => this.playSimpleTone('G3', '4n'),
-                'powerUp': () => this.playSimpleTone('C4', '2n'),
-                'menuSelect': () => this.playSimpleTone('A4', '8n'),
-                'questionBoxHit': () => this.playSimpleTone('F4', '16n'),
-                'itemGet': () => this.playSimpleTone('E5', '4n'),
-                'damage': () => this.playSimpleTone('C2', '8n')
+                'shoot': () => this.playNintendoSound('shoot'),
+                'hit': () => this.playNintendoSound('hit'),
+                'death': () => this.playNintendoSound('death'),
+                'enemyDeath': () => this.playNintendoSound('enemyDeath'),
+                'bossHit': () => this.playNintendoSound('bossHit'),
+                'bossDeath': () => this.playNintendoSound('bossDeath'),
+                'bossWarning': () => this.playNintendoSound('bossWarning'),
+                'powerUp': () => this.playNintendoSound('powerUp'),
+                'explosion': () => this.playNintendoSound('explosion'),
+                'menuSelect': () => this.playNintendoSound('menuSelect'),
+                'questionBoxHit': () => this.playNintendoSound('questionBoxHit'),
+                'itemGet': () => this.playNintendoSound('itemGet'),
+                'damage': () => this.playNintendoSound('damage')
             };
             
             const playFunction = soundMap[soundName];
@@ -537,41 +587,292 @@ export class SoundEffects {
     }
 
     /**
-     * 最小限のトーン再生
-     * @param {string} note - 音程
-     * @param {string} duration - 長さ
+     * 任天堂風SE再生（マリオ、ゼルダ風）
+     * @param {string} soundType - 効果音タイプ
      */
-    playSimpleTone(note, duration) {
+    playNintendoSound(soundType) {
         try {
-            if (!this.simpleOsc) {
-                // 軽量シンセサイザー作成（初回のみ）
-                this.simpleOsc = new Tone.Oscillator().toDestination();
-            }
-            
             if (Tone.context.state === 'suspended') {
                 Tone.start().then(() => {
-                    this.triggerSimpleSound(note, duration);
+                    this.triggerNintendoSound(soundType);
                 });
             } else {
-                this.triggerSimpleSound(note, duration);
+                this.triggerNintendoSound(soundType);
             }
         } catch (error) {
-            console.warn('Failed to play simple tone:', error.message);
+            console.warn('Failed to play Nintendo sound:', error.message);
         }
     }
 
     /**
-     * シンプル音再生実行
+     * 任天堂風SE実行（マリオ、ゼルダ風の気持ちいい音）
+     * @param {string} soundType - 効果音タイプ
+     */
+    triggerNintendoSound(soundType) {
+        try {
+            const now = Tone.now();
+
+            switch(soundType) {
+                case 'shoot': // レーザー発射音（柔らかいレーザー音）
+                    this.playSingleNote('C6', '64n', 'sine', -98);
+                    setTimeout(() => this.playSingleNote('E6', '64n', 'sine', -99), 20);
+                    break;
+
+                case 'hit': // プレイヤーダメージ（下降する衝撃音）
+                    this.playSweepSound(400, 100, '16n', 'triangle', -96);
+                    setTimeout(() => this.playNoiseSound('32n', 200, -98), 30);
+                    break;
+
+                case 'death': // プレイヤー死亡（下降メロディ）
+                    this.playMelodicSound(['E5', 'D5', 'C5', 'G4', 'E4'], ['32n', '32n', '32n', '32n', '8n'], -95);
+                    break;
+
+                case 'enemyDeath': // 敵撃破（爽快な上昇音）
+                    this.playMelodicSound(['C5', 'E5', 'G5'], ['64n', '64n', '32n'], -98);
+                    break;
+
+                case 'bossHit': // ボス被弾（重厚な衝撃音）
+                    this.playNoiseSound('32n', 100, -96);
+                    setTimeout(() => this.playSingleNote('C3', '16n', 'triangle', -95), 20);
+                    break;
+
+                case 'bossDeath': // ボス撃破（大爆発音）
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            this.playNoiseSound('8n', 100, -95);
+                            this.playSweepSound(300 - i * 50, 50, '16n', 'sawtooth', -95);
+                        }, i * 100);
+                    }
+                    break;
+
+                case 'bossWarning': // 警告音（緊迫感のあるサイレン）
+                    this.playSweepSound(600, 1000, '8n', 'square', -96);
+                    setTimeout(() => this.playSweepSound(1000, 600, '8n', 'square', -96), 150);
+                    break;
+
+                case 'powerUp': // アイテム取得（キラキラ上昇音）
+                    this.playMelodicSound(['C5', 'E5', 'G5', 'C6'], ['64n', '64n', '64n', '16n'], -96);
+                    break;
+
+                case 'explosion': // 爆発音（衝撃波）
+                    this.playNoiseSound('16n', 150, -96);
+                    setTimeout(() => this.playSweepSound(200, 50, '16n', 'triangle', -98), 30);
+                    break;
+
+                case 'menuSelect': // メニュー選択（心地よい音）
+                    this.playSingleNote('C6', '64n', 'sine', -96);
+                    setTimeout(() => this.playSingleNote('E6', '64n', 'sine', -98), 20);
+                    break;
+
+                case 'questionBoxHit': // コンコン（ボックス叩く）
+                    this.playSingleNote('C5', '32n', 'triangle', -98);
+                    setTimeout(() => this.playSingleNote('C6', '32n', 'triangle', -98), 50);
+                    break;
+
+                case 'itemGet': // チャリーン（アイテム取得）
+                    this.playMelodicSound(['E5', 'G5', 'C6'], ['32n', '32n', '8n'], -98);
+                    break;
+
+                case 'sparkAttack': // ⚡ スパーク攻撃（全敵撃破）
+                    // 派手な上昇音と爆発音の組み合わせ
+                    this.playSweepSound(100, 1200, '16n', 'square', -95);
+                    setTimeout(() => this.playNoiseSound('8n', 800, -96), 50);
+                    setTimeout(() => this.playSingleNote('C6', '4n', 'sine', -95), 100);
+                    break;
+
+                default:
+                    this.playSingleNote('C5', '16n', 'triangle', -10);
+            }
+        } catch (error) {
+            console.warn('Failed to trigger Nintendo sound:', error.message);
+        }
+    }
+
+    /**
+     * スイープ音再生（周波数変化）
+     */
+    playSweepSound(startFreq, endFreq, duration, type = 'triangle', volume = -70) {
+        const synth = new Tone.Synth({
+            oscillator: { type: type },
+            envelope: { attack: 0.001, decay: 0.1, sustain: 0.3, release: 0.1 }
+        });
+
+        const vol = new Tone.Volume(volume).toDestination();
+        synth.connect(vol);
+
+        synth.frequency.setValueAtTime(startFreq, Tone.now());
+        synth.frequency.exponentialRampToValueAtTime(endFreq, Tone.now() + Tone.Time(duration).toSeconds());
+        synth.triggerAttackRelease(duration, Tone.now());
+
+        setTimeout(() => {
+            synth.dispose();
+            vol.dispose();
+        }, Tone.Time(duration).toSeconds() * 1000 + 100);
+    }
+
+    /**
+     * ノイズ音再生（爆発・衝撃音）
+     */
+    playNoiseSound(duration, filterFreq = 100, volume = -50) {
+        const noise = new Tone.Noise('white').start();
+        const filter = new Tone.Filter(filterFreq, 'lowpass');
+        const envelope = new Tone.AmplitudeEnvelope({
+            attack: 0.001,
+            decay: 0.1,
+            sustain: 0.1,
+            release: 0.1
+        });
+        const vol = new Tone.Volume(volume).toDestination();
+
+        noise.connect(filter);
+        filter.connect(envelope);
+        envelope.connect(vol);
+
+        envelope.triggerAttackRelease(duration);
+
+        setTimeout(() => {
+            noise.stop();
+            noise.dispose();
+            filter.dispose();
+            envelope.dispose();
+            vol.dispose();
+        }, Tone.Time(duration).toSeconds() * 1000 + 100);
+    }
+
+    /**
+     * メロディック音再生（音階のシーケンス）
+     */
+    playMelodicSound(notes, durations, volume = -50) {
+        notes.forEach((note, i) => {
+            setTimeout(() => {
+                this.playSingleNote(note, durations[i] || '16n', 'square', volume);
+            }, i * 50);
+        });
+    }
+
+    /**
+     * 和音再生（コード）
+     */
+    playChordSound(notes, duration, volume = -48) {
+        const synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'triangle' },
+            envelope: { attack: 0.001, decay: 0.1, sustain: 0.2, release: 0.1 }
+        });
+
+        const vol = new Tone.Volume(volume).toDestination();
+        synth.connect(vol);
+
+        synth.triggerAttackRelease(notes, duration);
+
+        setTimeout(() => {
+            synth.dispose();
+            vol.dispose();
+        }, Tone.Time(duration).toSeconds() * 1000 + 100);
+    }
+
+    /**
+     * 単音再生
+     */
+    playSingleNote(note, duration, type = 'triangle', volume = -60) {
+        const synth = new Tone.Synth({
+            oscillator: { type: type },
+            envelope: { attack: 0.001, decay: 0.1, sustain: 0.3, release: 0.1 }
+        });
+
+        const vol = new Tone.Volume(volume).toDestination();
+        synth.connect(vol);
+
+        synth.triggerAttackRelease(note, duration);
+
+        setTimeout(() => {
+            synth.dispose();
+            vol.dispose();
+        }, Tone.Time(duration).toSeconds() * 1000 + 100);
+    }
+
+    /**
+     * FM音源風SE再生実行（YM2612/YM2151風）
      * @param {string} note - 音程
      * @param {string} duration - 長さ
+     * @param {string} type - 効果音タイプ
      */
-    triggerSimpleSound(note, duration) {
+    triggerSimpleSound(note, duration, type = 'default') {
         try {
-            const osc = new Tone.Oscillator(note, 'sine').toDestination();
-            osc.start();
-            osc.stop(Tone.now() + Tone.Time(duration).toSeconds());
+            const now = Tone.now();
+
+            // タイプ別にFM音源パラメータを設定
+            let harmonicity = 3;
+            let modulationIndex = 10;
+            let envelopeSettings = { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.2 };
+            let modEnvelopeSettings = { attack: 0.005, decay: 0.1, sustain: 0.5, release: 0.1 };
+            let volumeDb = -12;
+
+            switch(type) {
+                case 'shoot': // 発射音：鋭いレーザー音（無効化済み）
+                    harmonicity = 8;
+                    modulationIndex = 20;
+                    envelopeSettings = { attack: 0.001, decay: 0.05, sustain: 0.1, release: 0.05 };
+                    modEnvelopeSettings = { attack: 0.001, decay: 0.03, sustain: 0.1, release: 0.03 };
+                    volumeDb = -70;
+                    break;
+
+                case 'powerUp': // パワーアップ：キラキラした上昇音（必要最小限）
+                    harmonicity = 5;
+                    modulationIndex = 10;
+                    envelopeSettings = { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.3 };
+                    modEnvelopeSettings = { attack: 0.005, decay: 0.2, sustain: 0.5, release: 0.2 };
+                    volumeDb = -50;
+                    break;
+
+                case 'damage': // ダメージ：重く歪んだ音（さらに控えめに）
+                    harmonicity = 1.5;
+                    modulationIndex = 15;
+                    envelopeSettings = { attack: 0.001, decay: 0.08, sustain: 0.08, release: 0.06 };
+                    modEnvelopeSettings = { attack: 0.001, decay: 0.06, sustain: 0.15, release: 0.06 };
+                    volumeDb = -60;
+                    break;
+
+                case 'boss': // ボス関連：迫力ある重厚な音（必要最小限）
+                    harmonicity = 2;
+                    modulationIndex = 25;
+                    envelopeSettings = { attack: 0.01, decay: 0.15, sustain: 0.4, release: 0.2 };
+                    modEnvelopeSettings = { attack: 0.005, decay: 0.12, sustain: 0.5, release: 0.15 };
+                    volumeDb = -45;
+                    break;
+
+                default: // デフォルト：柔らかいFM音
+                    harmonicity = 3;
+                    modulationIndex = 10;
+                    envelopeSettings = { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.2 };
+                    modEnvelopeSettings = { attack: 0.005, decay: 0.1, sustain: 0.5, release: 0.1 };
+                    volumeDb = -55;
+            }
+
+            // FM音源シンセサイザー作成
+            const synth = new Tone.FMSynth({
+                harmonicity: harmonicity,
+                modulationIndex: modulationIndex,
+                oscillator: { type: 'sine' },
+                envelope: envelopeSettings,
+                modulation: { type: 'square' },
+                modulationEnvelope: modEnvelopeSettings
+            });
+
+            // 音量調整
+            const volume = new Tone.Volume(volumeDb).connect(Tone.Destination);
+            synth.connect(volume);
+
+            // 音を鳴らす
+            synth.triggerAttackRelease(note, duration, now);
+
+            // クリーンアップ
+            setTimeout(() => {
+                synth.dispose();
+                volume.dispose();
+            }, Tone.Time(duration).toSeconds() * 1000 + 100);
+
         } catch (error) {
-            console.warn('Failed to trigger simple sound:', error.message);
+            console.warn('Failed to trigger FM sound:', error.message);
         }
     }
 
@@ -622,7 +923,33 @@ export class SoundEffects {
      * @param {Object} synth - シンセサイザー
      * @param {Object} options - 再生オプション
      */
-    playSound(soundName, synth, options) {
+    playSound(soundName, synth, options = {}) {
+        // 🎵 MP3サウンドマッピング（優先使用）
+        const mp3Map = {
+            'explosion': 'explosion',
+            'bossDeath': 'boss_death',
+            'enemyDeath': 'enemy_death',
+            'bossHit': 'boss_hit',
+            'powerUp': 'item_get',
+            'itemGet': 'item_get',
+            'questionBoxHit': 'question_box_hit',
+            'muteki': 'muteki',
+            'sparkAttack': 'spark_attack'
+        };
+
+        // MP3が存在する場合は再生
+        if (mp3Map[soundName] && this.mp3Sounds[mp3Map[soundName]]) {
+            try {
+                const audio = this.mp3Sounds[mp3Map[soundName]];
+                audio.currentTime = 0;
+                audio.play().catch(e => console.warn('MP3 playback failed:', e));
+                return; // MP3再生成功したらTone.jsはスキップ
+            } catch (error) {
+                console.warn('MP3 playback error, falling back to Tone.js:', error);
+            }
+        }
+
+        // MP3がない場合はTone.jsで再生（フォールバック）
         const {
             note = this.getDefaultNote(soundName),
             duration = this.getDefaultDuration(soundName),
@@ -692,11 +1019,10 @@ export class SoundEffects {
     }
 
     /**
-     * メニュー確定シーケンス再生
+     * メニュー確定シーケンス再生（シンプルな単音に変更）
      */
     playMenuConfirmSequence(synth, volume) {
-        const chord = ['C4', 'E4', 'G4'];
-        this.safeTriggerAttackRelease(synth, chord, '4n');
+        this.playSingleNote('C5', '16n', 'sine', -58);
     }
 
     /**

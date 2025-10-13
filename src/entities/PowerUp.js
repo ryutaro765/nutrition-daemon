@@ -118,20 +118,25 @@ export class PowerUp {
             
             // 栄養ボール効果（initializeTypeの説明と一致）
             case 'carbohydrate': // 炭水化物 - エネルギー補給 +30HP
+                gameState.collectNutrient('carbohydrate'); // 栄養素収集
                 gameState.healHP(30);
                 break;
             case 'protein': // タンパク質 - 筋力強化 武器レベルアップ
+                gameState.collectNutrient('protein'); // 栄養素収集
                 console.log(`🥩 PROTEIN PICKUP: Before upgrade - GameState=${gameState.weaponLevel}`);
                 gameState.upgradeWeapon(weaponSystem);
                 console.log(`🥩 PROTEIN PICKUP: After upgrade - GameState=${gameState.weaponLevel}`);
                 break;
             case 'fat': // 脂質 - 持久力向上 スピードモード
+                gameState.collectNutrient('fat'); // 栄養素収集
                 gameState.activateSpeedMode(300); // 5秒間
                 break;
             case 'vitamin': // ビタミン - 免疫力アップ +40HP
+                gameState.collectNutrient('vitamin'); // 栄養素収集
                 gameState.healHP(40);
                 break;
             case 'mineral': // ミネラル - レーザー弾薬 +8
+                gameState.collectNutrient('mineral'); // 栄養素収集
                 gameState.addLaserAmmo(8);
                 break;
         }

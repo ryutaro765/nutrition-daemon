@@ -111,11 +111,11 @@ export class Enemy {
     canShoot(distance) {
         switch (this.type) {
             case 'sword_thrower':
-                return distance < 300 && Math.random() < 0.2;
+                return distance < 300 && Math.random() < 0.1; // 0.2 → 0.1 (50%減)
             case 'bomb_walker':
                 return false; // 爆弾歩行敵は射撃しない
             default:
-                return distance < 250 && Math.random() < 0.12;
+                return distance < 250 && Math.random() < 0.06; // 0.12 → 0.06 (50%減)
         }
     }
 
@@ -366,7 +366,7 @@ export class Enemy {
      * @param {Object} renderer - レンダラー
      */
     drawBat(renderer) {
-        renderer.drawSprite('bat', this.x, this.y, 3);
+        renderer.drawSprite('energy_drink_bat_png', this.x, this.y, 0.255);
     }
 
     /**
@@ -374,7 +374,7 @@ export class Enemy {
      * @param {Object} renderer - レンダラー
      */
     drawSineFlyer(renderer) {
-        renderer.drawSprite('broccoli_princess', this.x, this.y, 3);
+        renderer.drawSprite('banana_boy_png', this.x, this.y, 0.32);
     }
 
     /**
@@ -382,7 +382,7 @@ export class Enemy {
      * @param {Object} renderer - レンダラー
      */
     drawGroundWalker(renderer) {
-        renderer.drawSprite('egg_knight', this.x, this.y, 3);
+        renderer.drawSprite('broccoli_warrior_png', this.x, this.y, 0.255);
     }
 
     /**
@@ -390,7 +390,7 @@ export class Enemy {
      * @param {Object} renderer - レンダラー
      */
     drawSwordThrower(renderer) {
-        renderer.drawSprite('banana_hero', this.x, this.y, 3);
+        renderer.drawSprite('egg_knight_png', this.x, this.y, 0.255);
     }
 
     /**
@@ -403,10 +403,9 @@ export class Enemy {
         
         // 点滅時は色を変えてスプライト描画
         if (shouldBlink) {
-            // 赤っぽく光らせるためのオーバーレイ用スプライト描画
             renderer.ctx.save();
             renderer.ctx.globalCompositeOperation = 'source-over';
-            renderer.drawSprite('fried_fang', this.x, this.y, 3);
+            renderer.drawSprite('donut_boy_png', this.x, this.y, 0.255);
             
             // 赤いグロー効果
             renderer.ctx.globalCompositeOperation = 'overlay';
@@ -424,12 +423,12 @@ export class Enemy {
             }
         } else {
             // 通常時
-            renderer.drawSprite('fried_fang', this.x, this.y, 3);
+            renderer.drawSprite('donut_boy_png', this.x, this.y, 0.255);
         }
     }
 
     drawGarlicFruit(renderer) {
-        renderer.drawSprite('garlic_fruit', this.x, this.y, 3);
+        renderer.drawSprite('garlic_warrior_png', this.x, this.y, 0.255);
     }
 
     drawRedDemonKing(renderer) {

@@ -51,6 +51,25 @@ export class GameState {
         this.isSpeedMode = false;
         this.speedModeTimer = 0;
 
+        // 無敵モード（5大栄養素コンプリート報酬）
+        this.isInvincible = false;
+        this.invincibleTimer = 0;
+        this.invincibleDuration = 900; // 15秒間（60fps * 15）
+        this.nutrientOrbitActive = false; // 栄養素ボールがプレイヤーの周りを回転中
+
+        // 栄養素ボール収集状態
+        this.collectedNutrients = {
+            carbohydrate: false, // 炭水化物
+            protein: false,      // タンパク質
+            fat: false,          // 脂質
+            vitamin: false,      // ビタミン
+            mineral: false       // ミネラル
+        };
+
+        // スパーク攻撃（5大栄養素コンプリート報酬）
+        this.hasSparkAttack = false; // スパーク攻撃が使用可能か
+        this.shouldAutoActivateSparkAttack = false; // 5つ揃った瞬間に自動発動するフラグ
+
         // 川・地形（判定はBackgroundSystem + Player.jsで処理）
         this.isInRiver = false;
 
@@ -104,6 +123,9 @@ export class GameState {
             }
         }
 
+        // 無敵モード更新
+        this.updateInvincibleMode();
+
         // 射撃クールダウン
         if (this.shootCooldown > 0) {
             this.shootCooldown--;
@@ -151,13 +173,19 @@ export class GameState {
      * @returns {boolean} 死亡したかどうか
      */
     takeDamage(damage) {
+        // 無敵モード中はダメージを受けない
+        if (this.isInvincible) {
+            console.log(`✨ INVINCIBLE! No damage taken (${this.invincibleTimer / 60}s remaining)`);
+            return false;
+        }
+
         const oldHp = this.hp;
         this.hp -= damage;
         console.log(`💔 Player took ${damage} damage: ${oldHp} -> ${this.hp}`);
-        
+
         // 武器レベルリセット（1にダウン）
         this.weaponLevel = 1;
-        
+
         if (this.hp <= 0) {
             this.hp = 0;
             console.log('☠️ Player died!');
@@ -281,6 +309,100 @@ export class GameState {
     addLaserAmmo(amount) {
         this.laserAmmo += amount;
         console.log(`Laser ammo added: ${amount}, total: ${this.laserAmmo}`);
+    }
+
+    /**
+     * 栄養素ボール収集
+     * @param {string} nutrientType - 栄養素タイプ (carbohydrate, protein, fat, vitamin, mineral)
+     */
+    collectNutrient(nutrientType) {
+        if (this.collectedNutrients[nutrientType] !== undefined) {
+            if (!this.collectedNutrients[nutrientType]) {
+                this.collectedNutrients[nutrientType] = true;
+                console.log(`🍎 Collected ${nutrientType}! Progress: ${this.getNutrientsCollected()}/5`);
+
+                // 5種類全て集まったかチェック
+                if (this.checkNutrientsComplete()) {
+                    console.log('✨✨✨ ALL 5 NUTRIENTS COLLECTED! INVINCIBLE MODE ACTIVATED!');
+                    this.activateInvincibleMode();
+                }
+            }
+        }
+    }
+
+    /**
+     * 収集済み栄養素数を取得
+     * @returns {number} 収集済み数
+     */
+    getNutrientsCollected() {
+        return Object.values(this.collectedNutrients).filter(v => v === true).length;
+    }
+
+    /**
+     * 5大栄養素コンプリートチェック
+     * @returns {boolean} 全て集まったか
+     */
+    checkNutrientsComplete() {
+        return Object.values(this.collectedNutrients).every(v => v === true);
+    }
+
+    /**
+     * 無敵モード発動（5大栄養素コンプリート報酬）
+     */
+    activateInvincibleMode() {
+        this.isInvincible = true;
+        this.invincibleTimer = this.invincibleDuration; // 900フレーム = 15秒
+        this.nutrientOrbitActive = true; // 栄養素ボールが周回開始
+        console.log(`✨ INVINCIBLE MODE ACTIVATED! 15 seconds of invulnerability!`);
+        
+        // 🎵 無敵モード発動SE再生
+        if (this.audioManager) {
+            this.audioManager.playSFX('muteki');
+        }
+    }
+
+    /**
+     * スパーク攻撃を使用
+     */
+    useSparkAttack() {
+        // スパーク攻撃使用後に栄養素収集状態とフラグをリセット
+        this.hasSparkAttack = false;
+        this.shouldAutoActivateSparkAttack = false;
+
+        this.collectedNutrients = {
+            carbohydrate: false,
+            protein: false,
+            fat: false,
+            vitamin: false,
+            mineral: false
+        };
+
+        console.log(`⚡⚡⚡ SPARK ATTACK UNLEASHED! All enemies destroyed!`);
+        console.log(`🔄 Nutrients reset. Collect all 5 again for next Spark Attack!`);
+        return true;
+    }
+
+    /**
+     * 無敵モードタイマー更新
+     */
+    updateInvincibleMode() {
+        if (this.isInvincible && this.invincibleTimer > 0) {
+            this.invincibleTimer--;
+
+            if (this.invincibleTimer <= 0) {
+                this.isInvincible = false;
+                this.nutrientOrbitActive = false;
+                // 無敵モード終了時に栄養素をリセット
+                this.collectedNutrients = {
+                    carbohydrate: false,
+                    protein: false,
+                    fat: false,
+                    vitamin: false,
+                    mineral: false
+                };
+                console.log(`⏰ INVINCIBLE MODE ENDED - Nutrients reset`);
+            }
+        }
     }
 
     /**

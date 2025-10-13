@@ -11,7 +11,19 @@ export class GameScreens {
         this.transitionState = 'none'; // none, fadeOut, fadeIn
         this.transitionTimer = 0;
         this.transitionDuration = 30; // フレーム数
-        
+
+        // タイトルロゴ画像の読み込み
+        this.titleLogo = new Image();
+        this.titleLogo.src = '/sprites/logos/title_logo.png';
+        this.titleLogoLoaded = false;
+        this.titleLogo.onload = () => {
+            this.titleLogoLoaded = true;
+            console.log('✅ Title logo loaded');
+        };
+        this.titleLogo.onerror = () => {
+            console.error('❌ Failed to load title logo');
+        };
+
         // 画面固有の状態
         this.screenStates = {
             title: {
@@ -29,7 +41,7 @@ export class GameScreens {
             },
             bossMode: {
                 selectedIndex: 0,
-                options: ['ビタミンデーモン (Stage 1)', 'ミネラルデーモン (Stage 2)', 'ビタミンエンジェル (Stage 3)', 'Back'],
+                options: ['ビタミンデーモン (Stage 1)', 'ミネラルデーモン (Stage 2)', 'ビタミンエンジェル (Stage 3)', 'ヴァイスオメガ (Final Boss)', 'Back'],
                 cursorPosition: 0,
                 inputDelay: 0
             },
@@ -104,8 +116,8 @@ export class GameScreens {
                 timer: 0,
                 popolonX: -100,
                 popolonY: 450,
-                aphroditeX: 600,
-                aphroditeY: 350,
+                broccoliPrincessX: 600,
+                broccoliPrincessY: 350,
                 targetPopolonX: 450,
                 dialogueIndex: 0,
                 characterIndex: 0,
@@ -122,6 +134,21 @@ export class GameScreens {
                 ],
                 sparkles: [],
                 hearts: [],
+                completed: false
+            },
+            fusion: {
+                phase: 'darken', // darken, daemon_enter, angel_enter, approach, merge, flash, vise_omega_reveal, complete
+                timer: 0,
+                daemonX: -200,
+                daemonY: 300,
+                angelX: 1000,
+                angelY: 300,
+                targetCenterX: 400,
+                opacity: 1.0,
+                flashIntensity: 0,
+                mergeProgress: 0,
+                viseOmegaScale: 0,
+                particles: [],
                 completed: false
             }
         };
@@ -253,6 +280,20 @@ export class GameScreens {
                 this.screenStates.ending.hearts = [];
                 this.screenStates.ending.completed = false;
                 break;
+            case 'fusion':
+                this.screenStates.fusion.phase = 'darken';
+                this.screenStates.fusion.timer = 0;
+                this.screenStates.fusion.daemonX = -200;
+                this.screenStates.fusion.daemonY = 300;
+                this.screenStates.fusion.angelX = 1000;
+                this.screenStates.fusion.angelY = 300;
+                this.screenStates.fusion.opacity = 1.0;
+                this.screenStates.fusion.flashIntensity = 0;
+                this.screenStates.fusion.mergeProgress = 0;
+                this.screenStates.fusion.viseOmegaScale = 0;
+                this.screenStates.fusion.particles = [];
+                this.screenStates.fusion.completed = false;
+                break;
         }
     }
 
@@ -292,8 +333,11 @@ export class GameScreens {
             case 'ending':
                 result = this.updateEndingScreen(input);
                 break;
+            case 'fusion':
+                result = this.updateFusionScreen(input);
+                break;
         }
-        
+
         return result;
     }
 
@@ -425,8 +469,9 @@ export class GameScreens {
                 switch (state.selectedIndex) {
                     case 0: return { action: 'start_boss_battle', bossIndex: 0 }; // ビタミンデーモン
                     case 1: return { action: 'start_boss_battle', bossIndex: 1 }; // ミネラルデーモン
-                    case 2: return { action: 'start_boss_battle', bossIndex: 2 }; // ビタミンエンジェル (Final Stage)
-                    case 3: return 'menu'; // Back
+                    case 2: return { action: 'start_boss_battle', bossIndex: 2 }; // ビタミンエンジェル
+                    case 3: return { action: 'start_boss_battle', bossIndex: 3 }; // ヴァイスオメガ (Final Boss)
+                    case 4: return 'menu'; // Back
                 }
             }
             
@@ -615,7 +660,7 @@ export class GameScreens {
 
         switch (state.phase) {
             case 'entrance':
-                // Popolon walks towards Aphrodite - faster entrance
+                // Popolon walks towards Broccoli Princess - faster entrance
                 if (state.popolonX < state.targetPopolonX) {
                     state.popolonX += 6; // Doubled speed from 3 to 6
                 } else {
@@ -815,51 +860,53 @@ export class GameScreens {
             case 'ending':
                 this.drawEndingScreen(renderer);
                 break;
+            case 'fusion':
+                this.drawFusionScreen(renderer);
+                break;
         }
-        
+
         // 遷移エフェクト描画
         this.drawTransition(renderer);
     }
 
     /**
-     * タイトル画面描画（オリジナルKnightmare風）
+     * タイトル画面描画（タイトルロゴ画像版）
      * @param {Object} renderer - レンダラー
      */
     drawTitleScreen(renderer) {
         const centerX = GAME_CONFIG.CANVAS_WIDTH / 2;
         const centerY = GAME_CONFIG.CANVAS_HEIGHT / 2;
-        
+
         // 黒背景（完全に黒）
         renderer.ctx.fillStyle = '#000000';
         renderer.ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
-        
-        // ゲームタイトル：KNIGHTMARE（オリジナル風）
-        renderer.ctx.font = 'bold 56px "Courier New", monospace';
-        renderer.ctx.fillStyle = '#FFFFFF';
-        renderer.ctx.textAlign = 'center';
-        renderer.ctx.fillText('KNIGHTMARE', centerX, centerY - 120);
-        
-        // 日本語タイトル：魔城栄養伝説（赤色）
-        renderer.ctx.font = 'bold 48px "Courier New", monospace';
-        renderer.ctx.fillStyle = '#FF4444';
-        renderer.ctx.fillText('魔城栄養伝説', centerX, centerY - 60);
-        
-        // コピーライト表示
-        renderer.ctx.font = '20px "Courier New", monospace';
-        renderer.ctx.fillStyle = '#FFFFFF';
-        renderer.ctx.fillText('©OMEGA 1986', centerX, centerY - 10);
-        
-        // 点滅する操作案内
-        const blinkAlpha = Math.sin(Date.now() * 0.008) * 0.5 + 0.5;
-        renderer.ctx.font = '24px "Courier New", monospace';
-        renderer.ctx.fillStyle = `rgba(255, 255, 255, ${blinkAlpha})`;
-        renderer.ctx.fillText('PUSH SPACE KEY', centerX, centerY + 60);
 
-        // バージョン情報（右下）
-        renderer.ctx.font = '12px "Courier New", monospace';
-        renderer.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        renderer.ctx.textAlign = 'right';
-        renderer.ctx.fillText('v0.2.0', GAME_CONFIG.CANVAS_WIDTH - 10, GAME_CONFIG.CANVAS_HEIGHT - 10);
+        // タイトルロゴ画像を描画
+        if (this.titleLogoLoaded && this.titleLogo.complete) {
+            // 画像のサイズを取得
+            const logoWidth = this.titleLogo.width;
+            const logoHeight = this.titleLogo.height;
+
+            // 画面幅に合わせてスケール計算（最大幅600px）
+            const maxWidth = 600;
+            const scale = Math.min(maxWidth / logoWidth, 1.0);
+            const drawWidth = logoWidth * scale;
+            const drawHeight = logoHeight * scale;
+
+            // 中央上部に配置（少し下に）
+            const logoX = centerX - drawWidth / 2;
+            const logoY = 120;
+
+            renderer.ctx.drawImage(this.titleLogo, logoX, logoY, drawWidth, drawHeight);
+        }
+
+        // 点滅する操作案内（画面中央下）
+        const blinkAlpha = Math.sin(Date.now() * 0.008) * 0.5 + 0.5;
+        renderer.ctx.font = '28px "Courier New", monospace';
+        renderer.ctx.fillStyle = `rgba(255, 255, 255, ${blinkAlpha})`;
+        renderer.ctx.textAlign = 'center';
+        renderer.ctx.fillText('PUSH SPACE KEY', centerX, GAME_CONFIG.CANVAS_HEIGHT - 80);
+
         renderer.ctx.textAlign = 'center';
     }
 
@@ -1168,11 +1215,11 @@ export class GameScreens {
 
         // Draw Broccoli Princess sprite (PNG version) - 1.5x size
         if (renderer.drawSprite) {
-            renderer.drawSprite('broccoli_princess_png', state.aphroditeX, state.aphroditeY, 0.375); // 256px -> 96px (1.5x)
+            renderer.drawSprite('broccoli_princess_png', state.broccoliPrincessX, state.broccoliPrincessY, 0.375); // 256px -> 96px (1.5x)
         } else {
             // Fallback rectangle
             renderer.ctx.fillStyle = '#90EE90';
-            renderer.ctx.fillRect(state.aphroditeX, state.aphroditeY, 96, 96);
+            renderer.ctx.fillRect(state.broccoliPrincessX, state.broccoliPrincessY, 96, 96);
         }
 
         // Draw dialogue box if in dialogue phase
@@ -1353,7 +1400,7 @@ export class GameScreens {
         
         renderer.ctx.font = '18px "Courier New", monospace';
         renderer.ctx.fillStyle = '#FFFFFF';
-        renderer.ctx.fillText('姫君アフロディーテを救い出しました！', centerX, centerY + 150); // Japanese text
+        renderer.ctx.fillText('ブロッコリー姫を救い出しました！', centerX, centerY + 150); // Japanese text
 
         renderer.ctx.textAlign = 'start';
     }
@@ -1439,6 +1486,249 @@ export class GameScreens {
             if (settings[option.name] !== undefined) {
                 option.value = settings[option.name];
             }
+        }
+    }
+
+    /**
+     * 融合カットシーン更新
+     * @param {Object} input - 入力状態
+     * @returns {string|null} 遷移指示
+     */
+    updateFusionScreen(input) {
+        const state = this.screenStates.fusion;
+        state.timer++;
+
+        // フェーズごとの処理
+        switch (state.phase) {
+            case 'darken':
+                // 画面が徐々に暗くなる
+                state.opacity -= 0.01;
+                if (state.opacity <= 0) {
+                    state.opacity = 0;
+                    state.phase = 'daemon_enter';
+                }
+                break;
+
+            case 'daemon_enter':
+                // ビタミンデーモンが左から登場
+                state.daemonX += 4;
+                if (state.daemonX >= 150) {
+                    state.daemonX = 150;
+                    state.phase = 'angel_enter';
+                }
+                break;
+
+            case 'angel_enter':
+                // ビタミンエンジェルが右から登場
+                state.angelX -= 4;
+                if (state.angelX <= 450) {
+                    state.angelX = 450;
+                    state.phase = 'approach';
+                }
+                break;
+
+            case 'approach':
+                // 両者が中央に向かって接近
+                state.daemonX += 3;
+                state.angelX -= 3;
+
+                if (state.daemonX >= 280 && state.angelX <= 320) {
+                    state.phase = 'merge';
+                }
+                break;
+
+            case 'merge':
+                // 融合エフェクト
+                state.mergeProgress += 0.02;
+
+                // パーティクル生成
+                if (state.timer % 2 === 0) {
+                    for (let i = 0; i < 3; i++) {
+                        state.particles.push({
+                            x: 300 + (Math.random() - 0.5) * 100,
+                            y: 300 + (Math.random() - 0.5) * 100,
+                            vx: (Math.random() - 0.5) * 8,
+                            vy: (Math.random() - 0.5) * 8,
+                            life: 60,
+                            hue: Math.random() * 360
+                        });
+                    }
+                }
+
+                if (state.mergeProgress >= 1.0) {
+                    state.mergeProgress = 1.0;
+                    state.phase = 'flash';
+                }
+                break;
+
+            case 'flash':
+                // フラッシュエフェクト
+                state.flashIntensity += 0.05;
+                if (state.flashIntensity >= 1.0) {
+                    state.flashIntensity = 1.0;
+                    state.phase = 'vise_omega_reveal';
+                }
+                break;
+
+            case 'vise_omega_reveal':
+                // ヴァイスオメガ出現
+                state.viseOmegaScale += 0.02;
+
+                // フラッシュを徐々に減らす
+                state.flashIntensity -= 0.02;
+                if (state.flashIntensity < 0) state.flashIntensity = 0;
+
+                if (state.viseOmegaScale >= 1.0) {
+                    state.viseOmegaScale = 1.0;
+                    state.phase = 'complete';
+                    state.completed = true;
+                }
+                break;
+
+            case 'complete':
+                // カットシーン完了 - 自動的にボス戦へ遷移
+                if (state.timer > 180) { // 3秒待機
+                    return { action: 'start_vise_omega_battle' };
+                }
+                break;
+        }
+
+        // パーティクル更新
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+            const p = state.particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life--;
+            if (p.life <= 0) {
+                state.particles.splice(i, 1);
+            }
+        }
+
+        // SPACEでスキップ
+        if (input.space && !input.spacePressed) {
+            input.spacePressed = true;
+            return { action: 'start_vise_omega_battle' };
+        }
+
+        return null;
+    }
+
+    /**
+     * 融合カットシーン描画
+     * @param {Object} renderer - レンダラー
+     */
+    drawFusionScreen(renderer) {
+        const state = this.screenStates.fusion;
+        const ctx = renderer.ctx;
+
+        // 暗い背景
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
+
+        // darkenフェーズ
+        if (state.phase === 'darken') {
+            ctx.fillStyle = `rgba(0, 0, 0, ${1 - state.opacity})`;
+            ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
+            return;
+        }
+
+        // パーティクル描画
+        for (const p of state.particles) {
+            const alpha = p.life / 60;
+            ctx.fillStyle = `hsla(${p.hue}, 100%, 50%, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // ビタミンデーモン描画（daemon_enter, angel_enter, approach, merge）
+        if (['daemon_enter', 'angel_enter', 'approach', 'merge'].includes(state.phase)) {
+            const daemonAlpha = state.phase === 'merge' ? 1 - state.mergeProgress : 1;
+            ctx.globalAlpha = daemonAlpha;
+            if (renderer.drawSprite) {
+                renderer.drawSprite('vitamin_daemon', state.daemonX, state.daemonY, 0.84);
+            } else {
+                ctx.fillStyle = '#228B22';
+                ctx.fillRect(state.daemonX, state.daemonY, 120, 120);
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // ビタミンエンジェル描画（angel_enter, approach, merge）
+        if (['angel_enter', 'approach', 'merge'].includes(state.phase)) {
+            const angelAlpha = state.phase === 'merge' ? 1 - state.mergeProgress : 1;
+            ctx.globalAlpha = angelAlpha;
+            if (renderer.drawSprite) {
+                renderer.drawSprite('vitamin_angel', state.angelX, state.angelY, 0.84);
+            } else {
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(state.angelX, state.angelY, 120, 120);
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // 融合エフェクト（merge, flash）
+        if (state.phase === 'merge' || state.phase === 'flash') {
+            const centerX = 350;
+            const centerY = 350;
+            const radius = 80 + state.mergeProgress * 120;
+
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+            gradient.addColorStop(0, `rgba(255, 215, 0, ${state.mergeProgress})`);
+            gradient.addColorStop(0.5, `rgba(255, 105, 180, ${state.mergeProgress * 0.7})`);
+            gradient.addColorStop(1, 'rgba(255, 0, 255, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
+        }
+
+        // フラッシュエフェクト
+        if (state.flashIntensity > 0) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${state.flashIntensity})`;
+            ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
+        }
+
+        // ヴァイスオメガ描画（vise_omega_reveal, complete）
+        if (state.phase === 'vise_omega_reveal' || state.phase === 'complete') {
+            const centerX = 310;
+            const centerY = 210;
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.scale(state.viseOmegaScale, state.viseOmegaScale);
+            ctx.translate(-centerX, -centerY);
+
+            if (renderer.drawSprite) {
+                renderer.drawSprite('vise_omega', centerX, centerY, 0.9375);
+            } else {
+                // フォールバック描画
+                ctx.fillStyle = '#FF1493';
+                ctx.fillRect(centerX, centerY, 180, 180);
+            }
+
+            ctx.restore();
+
+            // 「最終形態...ヴァイスオメガ！」テキスト
+            if (state.viseOmegaScale > 0.8) {
+                ctx.font = 'bold 36px "Courier New", monospace';
+                ctx.fillStyle = '#FFD700';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = '#000000';
+                ctx.shadowBlur = 10;
+                ctx.fillText('最終形態...ヴァイスオメガ！', 400, 100);
+                ctx.shadowBlur = 0;
+                ctx.textAlign = 'start';
+            }
+        }
+
+        // スキップ表示
+        if (state.phase !== 'complete') {
+            const blinkAlpha = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
+            ctx.font = '16px "Courier New", monospace';
+            ctx.fillStyle = `rgba(255, 255, 255, ${blinkAlpha})`;
+            ctx.textAlign = 'center';
+            ctx.fillText('Press SPACE to skip', 400, 580);
+            ctx.textAlign = 'start';
         }
     }
 }

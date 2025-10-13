@@ -265,18 +265,34 @@ class Game {
     }
 
     /**
-     * オーディオ初期化（完全無効化版）
+     * オーディオ初期化
      */
     async initAudio() {
-        console.log('🚫 Game: Audio system completely disabled to prevent freeze');
-        this.audioEnabled = false;
-        this.bgmPlayer = null;
-        this.soundEffects = null;
-        
-        // AudioManagerも音響機能を無効化
-        this.audioManager.isDisabled = true;
-        
-        console.log('✅ Game: Audio system disabled successfully');
+        try {
+            console.log('🎵 Game: Initializing audio system...');
+
+            // AudioManagerは既にコンストラクタで作成済み
+            // ここでは有効化のみ行う
+            this.audioEnabled = true;
+            
+            // 🎵 BGMPlayerとSoundEffectsのインスタンス化
+            this.bgmPlayer = new BGMPlayer();
+            this.soundEffects = new SoundEffects();
+            
+            // AudioManagerに登録
+            this.audioManager.setBGMPlayer(this.bgmPlayer);
+            this.audioManager.addSFXPlayer('main', this.soundEffects);
+            
+            // GameStateにAudioManagerを渡す
+            if (this.gameState) {
+                this.gameState.audioManager = this.audioManager;
+            }
+
+            console.log('✅ Game: Audio system initialized (BGM + SFX ready)');
+        } catch (error) {
+            console.error('❌ Game: Audio initialization failed:', error);
+            this.audioEnabled = false;
+        }
     }
 
     /**
@@ -603,7 +619,13 @@ class Game {
             this.startBossBattle(result.bossIndex);
             return;
         }
-        
+
+        // Handle Vise Omega fusion cutscene completion
+        if (result && typeof result === 'object' && result.action === 'start_vise_omega_battle') {
+            this.startViseOmegaBattle();
+            return;
+        }
+
         switch (result) {
             case 'start_game':
                 this.startNewGame();
@@ -676,6 +698,34 @@ class Game {
     }
 
     /**
+     * ヴァイスオメガ戦開始（融合カットシーン後）
+     */
+    startViseOmegaBattle() {
+        console.log('🌟 Starting Vise Omega battle after fusion cutscene');
+
+        // ゲーム画面に遷移
+        this.currentScreen = 'game';
+
+        // 敵と敵弾をクリア
+        this.enemies = [];
+        this.enemyBullets = [];
+
+        // ボス戦モードとして設定
+        this.gameState.isBossBattle = true;
+        this.gameState.currentBoss = 4; // Vise Omega (特別な値)
+
+        // ヴァイスオメガ生成（bossIndex 3）
+        this.boss = BossFactory.createBoss(3);
+
+        // ボス紹介カットシーンを表示（ヴァイスオメガ専用）
+        this.bossIntroDisplay.showBossIntro(3);
+
+        // 武器レベルとHPを保持（リセットしない）
+        console.log(`⚔️ Weapon level preserved: ${this.gameState.weaponLevel}, HP: ${this.gameState.hp}`);
+        console.log('✨ Vise Omega spawned! Final battle begins!');
+    }
+
+    /**
      * 新しいゲーム開始
      */
     startNewGame() {
@@ -729,8 +779,8 @@ class Game {
             if (success) {
                 console.log('✅ Game: AudioManager initialized for game');
                 console.log('🎵 Game: Attempting to play stage1 BGM...');
-                // BGM再生（フリーズ防止のため無効化）
-                // this.audioManager.playBGM('stage1');
+                // BGM再生
+                this.audioManager.playBGM('stage1');
                 console.log('🎵 Game: BGM play command sent');
             } else {
                 console.warn('⚠️ Game: AudioManager initialization failed, no BGM');
@@ -799,17 +849,17 @@ class Game {
         if (this.player) {
             const terrain = this.backgroundSystem.getTerrain();
             this.player.update(input, this.gameState, terrain.rivers, terrain.bridges);
-            
-            // 射撃処理
+
+            // 通常の射撃処理
             const newBullets = this.weaponSystem.shoot(this.player, input, this.gameState);
             if (newBullets.length > 0) {
-                // 武器発射SE（フリーズ防止のため完全無効化）
+                // 武器発射SE（無効化）
                 // this.audioManager.playSFX('shoot');
                 // console.log('🚀 Bullets created:', newBullets.length, 'Total bullets:', this.bullets.length + newBullets.length);
             }
             // 弾丸数上限チェック後に追加
             this.addBulletsWithLimit(newBullets);
-            
+
             // マズルフラッシュ効果
             const weaponState = this.weaponSystem.getWeaponState();
             if (weaponState.muzzleFlash) {
@@ -821,7 +871,7 @@ class Game {
                 );
             }
         }
-        
+
         // 敵生成・更新
         this.updateEnemies();
         
@@ -945,14 +995,17 @@ class Game {
             
             // ボス登場演出を開始
             this.bossIntroDisplay.showBossIntro(bossIndex);
-            
+
             this.uiManager.setElementVisibility('warning', true);
-            // 【緊急無効化】ボス警告音を無効化
+            // ボス警告音（無効化）
             // this.audioManager.playSFX('bossWarning');
         }
-        
+
         if (this.boss) {
-            this.boss.update(this.player, this.enemyBullets);
+            // ボス紹介カットシーン中はボスが攻撃しない
+            if (!this.bossIntroDisplay.isInvulnerabilityPeriod()) {
+                this.boss.update(this.player, this.enemyBullets);
+            }
             
             if (this.boss.shouldRemove) {
                 // ボス撃破処理
@@ -1235,20 +1288,173 @@ class Game {
     }
 
     /**
+     * スパーク攻撃実行処理（全敵撃破）
+     */
+    executeSparkAttack() {
+        console.log('⚡⚡⚡ SPARK ATTACK UNLEASHED! All enemies destroyed!');
+
+        // スパーク攻撃を使用
+        const success = this.gameState.useSparkAttack();
+        if (!success) {
+            console.warn('⚠️ Spark attack not available');
+            return;
+        }
+
+        // 画面中央から放射状のエフェクト
+        const centerX = GAME_CONFIG.CANVAS_WIDTH / 2;
+        const centerY = GAME_CONFIG.CANVAS_HEIGHT / 2;
+
+        // 画面全体に電撃エフェクト（大量のスパーク）
+        for (let i = 0; i < 30; i++) {
+            const angle = (Math.PI * 2 * i) / 30;
+            const distance = Math.random() * 300 + 50;
+            const x = centerX + Math.cos(angle) * distance;
+            const y = centerY + Math.sin(angle) * distance;
+            this.particleSystem.createSparks(x, y, '#FFFF00', 12);
+            this.particleSystem.createSparks(x, y, '#00FFFF', 8);
+        }
+
+        // 全ての敵を倒す
+        let enemiesDestroyed = 0;
+        this.enemies.forEach(enemy => {
+            if (enemy && !enemy.shouldRemove) {
+                // 爆発エフェクト
+                this.particleSystem.createExplosion(
+                    enemy.x + enemy.width / 2,
+                    enemy.y + enemy.height / 2,
+                    '#FFAA00',
+                    10
+                );
+
+                // スコア加算
+                this.gameState.addScore(enemy.scoreValue || 100);
+
+                // 敵を削除
+                enemy.markForRemoval();
+                enemiesDestroyed++;
+            }
+        });
+
+        // 全ての敵弾を消去
+        let bulletsDestroyed = this.enemyBullets.length;
+        this.enemyBullets.forEach(bullet => {
+            if (bullet && !bullet.shouldRemove) {
+                // 小さなスパークエフェクト
+                this.particleSystem.createSparks(
+                    bullet.x,
+                    bullet.y,
+                    '#FFFF00',
+                    3
+                );
+                bullet.markForRemoval();
+            }
+        });
+
+        // 配列をクリーン
+        this.enemies = this.enemies.filter(e => !e.shouldRemove);
+        this.enemyBullets = this.enemyBullets.filter(b => !b.shouldRemove);
+
+        // スパーク攻撃SE（派手な音）
+        this.audioManager.playSFX('sparkAttack');
+
+        // UI演出
+        this.uiManager.startFlash(20); // 画面フラッシュ
+        this.uiManager.startShake(15, 30); // 画面振動
+
+        console.log(`⚡ Spark Attack: ${enemiesDestroyed} enemies destroyed, ${bulletsDestroyed} bullets cleared`);
+    }
+
+    /**
+     * 🌟 無敵モード中の栄養素ボール回転描画
+     * プレイヤーの周りを5つのボールがクルクル回る
+     */
+    drawOrbitingNutrients() {
+        if (!this.player) return;
+
+        // プレイヤーの実際の描画位置と中心を計算
+        // PNG画像は256px → 0.336倍 ≈ 86px で描画されており、中心は43px
+        const drawX = this.player.x + this.player.headOffset;
+        const drawY = this.player.y - this.player.bodyOffset;
+        const spriteHalfSize = 43; // 256 * 0.336 / 2 ≈ 43
+
+        const playerCenterX = drawX + spriteHalfSize;
+        const playerCenterY = drawY + spriteHalfSize;
+
+        const radius = 60; // 回転半径
+        const time = Date.now() * 0.003; // 回転速度
+
+        const ballSize = 20; // ボールの描画サイズ
+        const ballHalfSize = ballSize / 2; // 中心を合わせるための半分サイズ
+
+        const nutrients = [
+            { type: 'carbohydrate', angle: 0, color: '#FFD700' },
+            { type: 'protein', angle: Math.PI * 2 / 5, color: '#FF69B4' },
+            { type: 'fat', angle: Math.PI * 4 / 5, color: '#87CEEB' },
+            { type: 'vitamin', angle: Math.PI * 6 / 5, color: '#FFD700' },
+            { type: 'mineral', angle: Math.PI * 8 / 5, color: '#9370DB' }
+        ];
+
+        nutrients.forEach(nutrient => {
+            const angle = nutrient.angle + time;
+
+            // 回転軌道上の点を計算
+            const orbitX = playerCenterX + Math.cos(angle) * radius;
+            const orbitY = playerCenterY + Math.sin(angle) * radius;
+
+            // 画像の中心がorbitX, orbitYになるように描画位置を調整
+            const ballDrawX = orbitX - ballHalfSize;
+            const ballDrawY = orbitY - ballHalfSize;
+
+            // 画像を取得
+            const img = this.uiManager.nutritionBallImages?.[nutrient.type];
+
+            if (img && img.complete && img.naturalHeight !== 0) {
+                this.renderer.ctx.save();
+
+                // グロー効果
+                this.renderer.ctx.shadowColor = '#FFD700';
+                this.renderer.ctx.shadowBlur = 15;
+                this.renderer.ctx.globalAlpha = 1.0;
+
+                // 回転する栄養ボールを描画（画像の中心が軌道上に来るように）
+                this.renderer.ctx.drawImage(img, ballDrawX, ballDrawY, ballSize, ballSize);
+
+                this.renderer.ctx.restore();
+            } else {
+                // フォールバック：円で描画（円は中心座標で描画）
+                this.renderer.ctx.save();
+                this.renderer.ctx.fillStyle = nutrient.color;
+                this.renderer.ctx.shadowColor = nutrient.color;
+                this.renderer.ctx.shadowBlur = 10;
+                this.renderer.ctx.beginPath();
+                this.renderer.ctx.arc(orbitX, orbitY, ballHalfSize, 0, Math.PI * 2);
+                this.renderer.ctx.fill();
+                this.renderer.ctx.restore();
+            }
+        });
+    }
+
+    /**
      * プレイヤーヒット処理
      */
     handlePlayerHit() {
+        // 🌟 無敵状態の時はダメージを受けない
+        if (this.gameState.isInvincible) {
+            console.log('✨ INVINCIBLE! No damage taken!');
+            return;
+        }
+
         this.gameState.takeDamage(3); // 大幅緩和：20→3 (60HP ÷ 3 = 20発まで耐えられる)
-        
+
         // WeaponSystemとの強制同期（武器レベルリセット）
         this.weaponSystem.currentLevel = this.gameState.weaponLevel;
         console.log(`🔫 Weapon synchronized after hit: GameState=${this.gameState.weaponLevel}, WeaponSystem=${this.weaponSystem.currentLevel}`);
-        
-        // ヒット音（フリーズ防止のため無効化）
-        // this.audioManager.playSFX('hit');
+
+        // プレイヤーダメージ音（必要最小限）
+        this.audioManager.playSFX('hit');
         this.uiManager.startFlash(8);
         this.uiManager.startShake(8, 20);
-        
+
         // ヒットエフェクト
         this.particleSystem.createExplosion(
             this.player.x + this.player.width / 2,
@@ -1256,9 +1462,9 @@ class Game {
             '#FF6600',
             8
         );
-        
+
         if (this.gameState.hp <= 0) {
-            // 死亡音（フリーズ防止のため無効化）
+            // 死亡音（無効化）
             // this.audioManager.playSFX('death');
             // 入力遅延を除去（Continue機能修正）
             // this.gameOverInputDelay = 15; // 死亡時に入力遅延を設定
@@ -1273,8 +1479,8 @@ class Game {
     handleEnemyDefeat(enemy) {
         const points = enemy.maxHp * 10;
         this.gameState.addScore(points);
-        // 敵死亡音（フリーズ防止のため無効化）
-        // this.audioManager.playSFX('enemyDeath');
+        // 敵撃破音（必要最小限）
+        this.audioManager.playSFX('enemyDeath');
         
         // 特定の敵タイプ撃破時は近くの敵弾をクリア
         if (enemy.type === 'bomb_walker' || enemy.type === 'knight') {
@@ -1422,9 +1628,9 @@ class Game {
                 }
             }
         }
-        
-        // 【緊急無効化】ボスヒット音を無効化
-        // this.audioManager.playSFX('bossHit');
+
+        // ボスヒット音
+        this.audioManager.playSFX('bossHit');
     }
 
     /**
@@ -1480,8 +1686,8 @@ class Game {
             
             const bonusPoints = 5000; // 10000 -> 5000に調整してレベルアップ抑制
             this.gameState.addScore(bonusPoints);
-            // 【緊急無効化】ボス死亡音を無効化
-            // this.audioManager.playSFX('bossDeath');
+            // ボス撃破音（必要最小限）
+            this.audioManager.playSFX('bossDeath');
             this.uiManager.startShake(20, 60);
             
             // ✅ ボス撃破時に敵弾を全てクリア
@@ -1528,46 +1734,58 @@ class Game {
             
             // ボス撃破時のbossIndexを記録
             const defeatedBossIndex = this.boss.bossIndex;
-            
-            // ボス状態リセット（GameStateのdefeatBoss()メソッドを使用）
+
+            // ボスをnullに設定
             this.boss = null;
-            this.gameState.defeatBoss();
-            
-            // ボスモードの場合の処理
-            if (this.gameState.isBossMode) {
-                // ステージ3（bossIndex=2）のビタミンエンジェルのみでエンディング
-                if (defeatedBossIndex === 2) {
-                    console.log('🏆 Boss Mode victory - Stage 3 (Vitamin Angel) defeated! Transitioning to ending cutscene...');
-                    setTimeout(() => {
-                        this.currentScreen = 'ending';
-                        this.gameScreens.transitionTo('ending');
-                        this.gameState.isBossMode = false;
-                    }, 2000); // 2秒後にエンディングへ
-                } else {
-                    console.log(`🏆 Boss Mode victory - Stage ${defeatedBossIndex + 1} defeated! Returning to menu...`);
-                    setTimeout(() => {
-                        this.currentScreen = 'menu';
-                        this.gameScreens.transitionTo('menu');
-                        this.gameState.isBossMode = false;
-                    }, 3000); // 3秒後にメニューに戻る
-                }
+
+            // 🌟 bossIndexベースの判定（最優先：ストーリー進行）
+            // ✨ ビタミンエンジェル（bossIndex=2）撃破時は融合カットシーンへ
+            if (defeatedBossIndex === 2 && !this.gameState.isBossMode) {
+                console.log('🌟 Vitamin Angel defeated! Starting fusion cutscene...');
+                // ビタミンエンジェル撃破時は通常のdefeatBoss()を呼ばず、手動でボス状態をリセット
+                this.gameState.bossesDefeated++;
+                this.gameState.isBossBattle = false;
+                this.gameState.currentBoss = null;
+                this.gameState.musicState.isBossMusic = false;
+                this.gameState.musicState.currentBossMusic = 0;
+                // gameClearedはまだtrueにしない（ヴァイスオメガ撃破まで待つ）
+
+                setTimeout(() => {
+                    this.currentScreen = 'fusion';
+                    this.gameScreens.transitionTo('fusion');
+                }, 2000); // 2秒後に融合カットシーンへ
+                return; // 通常のステージ進行処理をスキップ
+            }
+            // ✨ ヴァイスオメガ（bossIndex=3）撃破時はエンディングへ
+            else if (defeatedBossIndex === 3) {
+                console.log('🏆 Vise Omega defeated! Game cleared! Transitioning to ending...');
+                this.gameState.gameCleared = true;
+                this.gameState.musicState.isVictoryMusic = true;
+                setTimeout(() => {
+                    this.currentScreen = 'ending';
+                    this.gameScreens.transitionTo('ending');
+                    this.gameState.isBossMode = false;
+                }, 2000); // 2秒後にエンディングへ
+                return; // 通常のステージ進行処理をスキップ
+            }
+            // ボスモードの場合の処理（ボスモード選択時のみ）
+            else if (this.gameState.isBossMode) {
+                console.log(`🏆 Boss Mode victory - Stage ${defeatedBossIndex + 1} defeated! Returning to menu...`);
+                this.gameState.defeatBoss(); // 通常のdefeatBoss()を呼ぶ
+                setTimeout(() => {
+                    this.currentScreen = 'menu';
+                    this.gameScreens.transitionTo('menu');
+                    this.gameState.isBossMode = false;
+                }, 3000); // 3秒後にメニューに戻る
+                return;
             } else {
-                // 通常モードの場合はステージ変更処理
+                // 通常モードの場合（ボス1と2）はステージ変更処理
+                this.gameState.defeatBoss(); // 通常のdefeatBoss()を呼ぶ
                 const stageChanged = this.backgroundSystem.advanceToNextStage();
                 if (stageChanged) {
                     console.log(`🎬 Stage advanced to ${this.gameState.currentStage} after boss defeat`);
                     // Zelda風ステージ名表示を開始
                     this.stageNameDisplay.showStageName(this.gameState.currentStage);
-                } else {
-                    console.log(`🏆 All stages completed! Transitioning to ending cutscene...`);
-                    // Check if game is cleared to trigger ending
-                    if (this.gameState.gameCleared) {
-                        console.log('🎬 Game cleared! Starting ending cutscene...');
-                        setTimeout(() => {
-                            this.currentScreen = 'ending';
-                            this.gameScreens.transitionTo('ending');
-                        }, 2000); // 2 second delay to let boss defeat effects play
-                    }
                 }
             }
             
@@ -1590,8 +1808,8 @@ class Game {
      */
     handlePowerUpCollection(powerUp) {
         powerUp.applyEffect(this.gameState, this.weaponSystem);
-        // パワーアップ音（フリーズ防止のため無効化）
-        // this.audioManager.playSFX('powerUp');
+        // アイテム取得音（必要最小限）
+        this.audioManager.playSFX('powerUp');
         
         // 取得エフェクト
         this.particleSystem.createPowerUpEffect(
@@ -1608,7 +1826,7 @@ class Game {
      * @param {Object} questionBox - ？ボックスオブジェクト
      */
     handleQuestionBoxBreak(questionBox) {
-        // 【緊急無効化】爆発音を無効化
+        // 爆発音（無効化）
         // this.audioManager.playSFX('explosion');
         
         // 爆発エフェクト
@@ -1648,9 +1866,14 @@ class Game {
         const enterDown = input.isKeyDown('Enter');
         const rDown = input.isKeyDown('KeyR');
         const escDown = input.isKeyDown('Escape');
-        
+
         // スペースキーも追加でサポート
         const spaceDown = input.isKeyDown('Space');
+
+        // デバッグ：キー入力状態を表示
+        if (cDown || enterDown || spaceDown || rDown) {
+            console.log(`🎹 Key pressed: C=${cDown}, Enter=${enterDown}, Space=${spaceDown}, R=${rDown}`);
+        }
         
         // 入力フラグを管理（連続入力を防ぐ）
         if (!this.inputCooldown) this.inputCooldown = {};
@@ -1726,8 +1949,52 @@ class Game {
      * オーディオ更新
      */
     updateAudio() {
-        if (this.bgmPlayer) {
-            this.bgmPlayer.updateDynamicMusic(this.gameState);
+        if (!this.audioManager || !this.audioManager.bgmPlayer) return;
+
+        const bgmPlayer = this.audioManager.bgmPlayer;
+        let targetBGM = null;
+
+        // ボス戦中の場合
+        if (this.boss && !this.boss.shouldRemove) {
+            // ボスインデックスに応じてBGM選択
+            switch (this.boss.bossIndex) {
+                case 0:
+                    targetBGM = 'boss1'; // ビタミンデーモン
+                    break;
+                case 1:
+                    targetBGM = 'boss2'; // ミネラルデーモン
+                    break;
+                case 2:
+                    targetBGM = 'boss3'; // ビタミンエンジェル
+                    break;
+                case 3:
+                    targetBGM = 'boss4'; // ヴァイスオメガ
+                    break;
+                default:
+                    targetBGM = 'boss1';
+            }
+        } else {
+            // 通常ステージBGM（現在のステージに基づく）
+            const currentStage = this.gameState.currentStage || 0;
+            switch (currentStage) {
+                case 0:
+                    targetBGM = 'stage1'; // 草原
+                    break;
+                case 1:
+                    targetBGM = 'stage2'; // 荒野
+                    break;
+                case 2:
+                    targetBGM = 'stage3'; // 魔城
+                    break;
+                default:
+                    targetBGM = 'stage1';
+            }
+        }
+
+        // BGMが変わる場合のみ切り替え
+        if (targetBGM && bgmPlayer.currentTrack !== targetBGM) {
+            console.log(`🎵 Switching BGM: ${bgmPlayer.currentTrack} → ${targetBGM}`);
+            bgmPlayer.play(targetBGM);
         }
     }
 
@@ -1793,20 +2060,25 @@ class Game {
         for (const powerUp of this.powerUps) {
             powerUp.draw(this.renderer);
         }
-        
+
+        // 🌟 無敵モード中の栄養素ボール回転描画
+        if (this.gameState.nutrientOrbitActive && this.player) {
+            this.drawOrbitingNutrients();
+        }
+
         // UI描画
         this.uiManager.draw(
-            this.renderer, 
-            this.gameState, 
-            this.weaponSystem.getWeaponState(), 
+            this.renderer,
+            this.gameState,
+            this.weaponSystem.getWeaponState(),
             this.boss
         );
         
         // ステージ名表示（UI上に重ねる）
         this.stageNameDisplay.render(this.renderer);
-        
+
         // ボス登場演出（UI最上位レイヤー）
-        this.bossIntroDisplay.render(this.renderer);
+        this.bossIntroDisplay.render(this.renderer, this.boss);
     }
 
     /**
